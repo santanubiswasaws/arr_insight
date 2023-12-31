@@ -19,8 +19,7 @@ def create_monthly_rr_analysis(df):
     df2_rows = []
 
     # Create an empty DataFrame to store results
-    df2 = pd.DataFrame(columns=['customerId', 'month', 'currentMonthContractValue', 'previousMonthAmount', 'nextMonthAmount'])
-
+    df2 = pd.DataFrame(columns=['customerId', 'month', 'currentMonthContractValue', 'previousMonthAmount', 'nextMonthAmount', 'newBusiness'])
 
     # Iterate over each row in the original dataframe
     for _, row in df.iterrows():
@@ -59,7 +58,8 @@ def create_monthly_rr_analysis(df):
                     'month': current_month.strftime('%Y-%m'),
                     'currentMonthContractValue': monthly_contract_value,
                     'previousMonthAmount': 0,  # Placeholder for now
-                    'nextMonthAmount': 0  # Placeholder for now
+                    'nextMonthAmount': 0,  # Placeholder for now
+                    'newBusiness': 0  # Placeholder for now
                 })
 
     # Create the DataFrame after the loop
@@ -75,5 +75,8 @@ def create_monthly_rr_analysis(df):
 
         df2.at[idx, 'previousMonthAmount'] = previous_month_row['currentMonthContractValue'].sum() if not previous_month_row.empty else 0
         df2.at[idx, 'nextMonthAmount'] = next_month_row['currentMonthContractValue'].sum() if not next_month_row.empty else 0
+
+    # Set the value of 'newBusiness' based on the conditions and fill missing values with 0
+    # df2['newBusiness'] = df2.loc[(df2['previousMonthAmount'] == 0) & (df2['currentMonthContractValue'] > 0), 'newBusiness'].fillna(0)
 
     return df2
