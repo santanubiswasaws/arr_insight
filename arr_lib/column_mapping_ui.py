@@ -1,11 +1,10 @@
 import streamlit as st
 
 def perform_column_mapping(predefined_values, column_names):
-    st.title("ARR Analysis")
+    st.subheader("Map columns")
 
     # Create a form for user interaction
     with st.form("column_mapping_form"):
-        st.subheader('Map columns')
         st.markdown("<style>label, .multiselect-container .dropdown-item {font-size: 24px;}</style>", unsafe_allow_html=True)
 
         # Initialize the mapping dictionary in session state

@@ -76,7 +76,33 @@ def create_monthly_rr_analysis(df):
         df2.at[idx, 'previousMonthAmount'] = previous_month_row['currentMonthContractValue'].sum() if not previous_month_row.empty else 0
         df2.at[idx, 'nextMonthAmount'] = next_month_row['currentMonthContractValue'].sum() if not next_month_row.empty else 0
 
-    # Set the value of 'newBusiness' based on the conditions and fill missing values with 0
-    # df2['newBusiness'] = df2.loc[(df2['previousMonthAmount'] == 0) & (df2['currentMonthContractValue'] > 0), 'newBusiness'].fillna(0)
+
+    # metrics calculation 
+
+    # Define boolean conditions for calculations of metrics 
+    condition1 = df2['currentMonthContractValue'] == df2['previousMonthAmount']
+    condition2 = df2['previousMonthAmount'] == 0
+    condition3 = df2['currentMonthContractValue'] > df2['previousMonthAmount']
+    condition4 = df2['previousMonthAmount'] != 0
+    condition5 = df2['currentMonthContractValue'] < df2['previousMonthAmount']
+    condition6 = df2['nextMonthAmount'] != 0
+    condition7 = df2['nextMonthAmount'] == 0
+    condition8 = df2['currentMonthContractValue'] > 0
+   
+    # Apply the conditions to calculate the 'newBusiness' column
+    df2['newBusiness'] = 0
+    df2.loc[condition2, 'newBusiness'] = df2.loc[condition2, 'currentMonthContractValue']
+
+    # Apply the conditions to calculate the 'upSell' column
+    df2['upSell'] = 0
+    df2.loc[condition3 & condition4, 'upSell'] = df2['currentMonthContractValue'] - df2['previousMonthAmount']
+
+    # Apply the conditions to calculate the 'downSell' column
+    df2['downSell'] = 0
+    df2.loc[condition5 & condition6, 'downSell'] = df2['previousMonthAmount'] - df2['currentMonthContractValue']
+
+    # Apply the conditions to calculate the 'downSell' column
+    df2['churn'] = 0
+    df2.loc[condition7 & condition8, 'churn'] = df2['currentMonthContractValue']  
 
     return df2
