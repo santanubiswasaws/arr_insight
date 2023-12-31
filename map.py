@@ -46,7 +46,7 @@ def main():
                 arr_df = create_monthly_rr_analysis(mapped_df)
     
                 # Display df2
-                st.subheader('ARR Analysis - Scroll down to see New Business, Up Sell, Down Sell and Churn', divider='green') 
+                st.subheader('Monthly bucket', divider='green') 
                 st.dataframe(arr_df, use_container_width=True)
 
 
