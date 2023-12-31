@@ -1,7 +1,7 @@
 # Byte-compiled / optimized / DLL files
 
 .env 
-virenv
+virenv/
 
 __pycache__/
 *.py[cod]
