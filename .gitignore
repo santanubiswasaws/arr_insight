@@ -2,6 +2,7 @@
 
 .env 
 virenv/
+scratch*
 
 __pycache__/
 *.py[cod]

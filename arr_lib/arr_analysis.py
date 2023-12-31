@@ -52,11 +52,11 @@ def create_monthly_rr_analysis(df):
             existing_record = df2[(df2['customerId'] == row['customerId']) & (df2['month'] == current_month.strftime('%Y-%m'))]
 
             # Skip creating a new row if currentMonthContractValue is already present for the customer and month
-            if existing_record.empty or existing_record['currentMonthContractValue'].sum() == 0:
+            if existing_record.empty or existing_record['monthlyRevenue'].sum() == 0:
                 df2_rows.append({
                     'customerId': row['customerId'],
                     'month': current_month.strftime('%Y-%m'),
-                    'currentMonthContractValue': monthly_contract_value,
+                    'monthlyRevenue': monthly_contract_value,
                     'previousMonthAmount': 0,  # Placeholder for now
                     'nextMonthAmount': 0,  # Placeholder for now
                     'newBusiness': 0  # Placeholder for now
@@ -66,43 +66,162 @@ def create_monthly_rr_analysis(df):
     df2 = pd.DataFrame(df2_rows)
 
     # Group by customerId and month, sum the currentMonthContractValue
-    df2 = df2.groupby(['customerId', 'month'], as_index=False).agg({'currentMonthContractValue': 'sum'})
+    df2 = df2.groupby(['customerId', 'month'], as_index=False).agg({'monthlyRevenue': 'sum'})
 
     # Update the 'previousMonthAmount' and 'nextMonthAmount' columns
     for idx, row in df2.iterrows():
         previous_month_row = df2[(df2['customerId'] == row['customerId']) & (df2['month'] == (datetime.strptime(row['month'], '%Y-%m') - pd.DateOffset(months=1)).strftime('%Y-%m'))]
         next_month_row = df2[(df2['customerId'] == row['customerId']) & (df2['month'] == (datetime.strptime(row['month'], '%Y-%m') + pd.DateOffset(months=1)).strftime('%Y-%m'))]
 
-        df2.at[idx, 'previousMonthAmount'] = previous_month_row['currentMonthContractValue'].sum() if not previous_month_row.empty else 0
-        df2.at[idx, 'nextMonthAmount'] = next_month_row['currentMonthContractValue'].sum() if not next_month_row.empty else 0
+        df2.at[idx, 'previousMonthAmount'] = previous_month_row['monthlyRevenue'].sum() if not previous_month_row.empty else 0
+        df2.at[idx, 'nextMonthAmount'] = next_month_row['monthlyRevenue'].sum() if not next_month_row.empty else 0
 
 
     # metrics calculation 
 
     # Define boolean conditions for calculations of metrics 
-    condition1 = df2['currentMonthContractValue'] == df2['previousMonthAmount']
+    condition1 = df2['monthlyRevenue'] == df2['previousMonthAmount']
     condition2 = df2['previousMonthAmount'] == 0
-    condition3 = df2['currentMonthContractValue'] > df2['previousMonthAmount']
+    condition3 = df2['monthlyRevenue'] > df2['previousMonthAmount']
     condition4 = df2['previousMonthAmount'] != 0
-    condition5 = df2['currentMonthContractValue'] < df2['previousMonthAmount']
+    condition5 = df2['monthlyRevenue'] < df2['previousMonthAmount']
     condition6 = df2['nextMonthAmount'] != 0
     condition7 = df2['nextMonthAmount'] == 0
-    condition8 = df2['currentMonthContractValue'] > 0
+    condition8 = df2['monthlyRevenue'] > 0
    
     # Apply the conditions to calculate the 'newBusiness' column
     df2['newBusiness'] = 0
-    df2.loc[condition2, 'newBusiness'] = df2.loc[condition2, 'currentMonthContractValue']
+    df2.loc[condition2, 'newBusiness'] = df2.loc[condition2, 'monthlyRevenue']
 
     # Apply the conditions to calculate the 'upSell' column
     df2['upSell'] = 0
-    df2.loc[condition3 & condition4, 'upSell'] = df2['currentMonthContractValue'] - df2['previousMonthAmount']
+    df2.loc[condition3 & condition4, 'upSell'] = df2['monthlyRevenue'] - df2['previousMonthAmount']
 
     # Apply the conditions to calculate the 'downSell' column
     df2['downSell'] = 0
-    df2.loc[condition5 & condition6, 'downSell'] = df2['previousMonthAmount'] - df2['currentMonthContractValue']
+    df2.loc[condition5 & condition6, 'downSell'] = df2['previousMonthAmount'] - df2['monthlyRevenue']
 
     # Apply the conditions to calculate the 'downSell' column
     df2['churn'] = 0
-    df2.loc[condition7 & condition8, 'churn'] = df2['currentMonthContractValue']  
+    df2.loc[condition7 & condition8, 'churn'] = df2['monthlyRevenue']  
 
     return df2
+
+def create_arr_metrics(df):
+    """
+    Process df containing monthly rr values for each customer and generates aggregated value.
+    Also create the wwaterfall or flow of ARR 
+
+    Parameters:
+    - df (pd.DataFrame): Dataframe with each row containing customer and month level contract value, 
+    new buessiness, upsell, downsell and churn
+
+    Returns:
+    - pd.DataFrame: Dataframe with transposed data - for each month becoming a column, also gives customer level aggregated revenue
+    - pd.DataFrame: Gives the over all metrics for each month - MRR, ARR, newBusiness, upSell, downSell, churn 
+    """
+
+
+    # Print the original dataframe
+    print("Original DataFrame:")
+
+    # select only the required columns 
+    df = df.loc[:, ['customerId', 'month','monthlyRevenue','newBusiness', 'upSell', 'downSell','churn']]
+
+    # Melt the original dataframe
+    melted_df = pd.melt(df, id_vars=['customerId', 'month'],
+                        var_name='measureType', value_name='value')
+
+    print("melted df")
+    #print(melted_df)
+    # Get unique months dynamically
+    # Transpose the melted dataframe
+    transposed_df = melted_df.pivot_table(index=['customerId', 'measureType'],
+                                        columns='month', values='value', fill_value=0, aggfunc='sum').reset_index()
+
+    #print(transposed_df)
+    # Rename the columns for better clarity
+    transposed_df.columns.name = None  # Remove the 'month' label
+
+    print(transposed_df)
+    #transposed_df = transposed_df.reindex(columns=['customerId', 'measureType'] + list(months))
+
+
+    # Display the transposed dataframe
+    print("\nTransposed DataFrame:")
+    #print(transposed_df)
+
+
+
+    # Define a custom order for the 'Category' column
+    custom_sort_order = ['monthlyRevenue','newBusiness', 'upSell', 'downSell','churn']
+
+    # Convert 'Category' to a categorical column with the custom order
+    transposed_df['measureType'] = pd.Categorical(transposed_df['measureType'], categories=custom_sort_order, ordered=True)
+    print('cat')
+    #print(transposed_df)
+
+    # Sort the DataFrame by a combination of columns (e.g., 'Category' and 'Salary')
+    transposed_df_sorted = transposed_df.sort_values(by=['customerId', 'measureType'], ascending=[True, True])
+
+    # Display the sorted DataFrame
+    print("\nSorted DataFrame by Combination of Columns with Custom Sort Order:")
+    #print(transposed_df_sorted)
+
+
+
+    transpose_df = transposed_df_sorted
+    metrics_df = create_aggregated_arr_metrics(transpose_df)
+    return transpose_df, metrics_df
+
+
+def create_aggregated_arr_metrics(df):
+    """
+    Process df containing transposed monthly metrics for each customer, aggregates the values for all customers and returns the aggregated df
+
+    Parameters:
+    - df (pd.DataFrame): transposed monthly metrics for each customerlevel with revenue, new buessiness, upsell, downsell and churn
+
+    Returns:
+    - pd.DataFrame: Gives the over all metrics for each month - MRR, ARR, newBusiness, upSell, downSell, churn 
+    """
+
+
+    # Group by 'customerId' and aggregate the sum across all measureTypes for each month
+    aggregated_df = df.groupby(['measureType']).agg({col: 'sum' for col in df.columns[2:]}).reset_index()
+
+    aggregated_df.insert(0, 'customerId', 'Aggregated')
+
+
+    # # Add a new row for 'ARR' which is 12 * monthlyRevenue
+    arr_row = pd.DataFrame({
+        'customerId': ['Aggregated'],
+        'measureType': ['ARR']})
+    
+    # Calculate values for each month
+    values_dict = {
+        month: 12 * aggregated_df.loc[aggregated_df['measureType'] == 'monthlyRevenue', month].iloc[0]
+        for month in df.columns[2:]
+    }
+
+    # Create a Series with the calculated values and set the index to match df.columns
+    arr_series = pd.Series(values_dict, index=df.columns[2:])
+
+    # # Append the new row to the DataFrame
+    # arr_series = pd.Series(values_dict, index=df.columns[2:])
+
+    # Create a DataFrame from the Series
+    arr_row = pd.DataFrame([arr_series], columns=arr_series.index)
+
+    # Add 'customerId' and 'measureType'
+    arr_row['customerId'] = 'Aggregated'
+    arr_row['measureType'] = 'ARR'
+
+    # add the ARR row to the original df 
+    aggregated_df = pd.concat([aggregated_df, arr_row], ignore_index=True)
+
+    # Display the aggregated DataFrame
+    print("\nAggregated DataFrame:")
+    print(aggregated_df)
+    
+    return aggregated_df

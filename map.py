@@ -1,7 +1,9 @@
 import streamlit as st
 import pandas as pd
 from arr_lib.column_mapping import map_columns
+from arr_lib.column_mapping import PREDEFINED_COLUMN_HEADERS
 from arr_lib.arr_analysis import create_monthly_rr_analysis
+from arr_lib.arr_analysis import create_arr_metrics
 from arr_lib.column_mapping_ui import perform_column_mapping
 from arr_lib.styling import BUTTON_STYLE
 
@@ -28,17 +30,13 @@ def main():
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-
-        # Predefined values for mapping
-        predefined_values = ['customerId', 'contractId', 'contractStartDate', 'contractEndDate', 'totalContractValue']
-
         # Column names from the DataFrame
         column_names = list(df.columns)
 
         # Call the perform_column_mapping method - to render mapping UI 
-        column_mapping_result = perform_column_mapping(predefined_values, column_names)
+        column_mapping_result = perform_column_mapping(PREDEFINED_COLUMN_HEADERS, column_names)
 
-
+        # initialize mapped_df
         if 'mapped_df' not in st.session_state:
                 st.session_state.mapped_df = pd.DataFrame()
 
@@ -55,7 +53,7 @@ def main():
         st.markdown("<br><br>", unsafe_allow_html=True)
 
 
-
+        # initialize arr_df 
         if 'arr_df' not in st.session_state:
                 st.session_state.arr_df = pd.DataFrame()
 
@@ -67,6 +65,7 @@ def main():
                     # Call the method to create df2
                     mapped_df = st.session_state.mapped_df
                     arr_df = create_monthly_rr_analysis(mapped_df)
+
                     # Initialize or update st.session_state.arr_df
                     if 'arr_df' not in st.session_state:
                         st.session_state.arr_df = arr_df
@@ -80,6 +79,48 @@ def main():
             # Display monthly arr df
             st.subheader('Monthly bucket :', divider='green') 
             st.dataframe(st.session_state.arr_df.round(0), use_container_width=True)
+
+        
+        st.markdown("<br><br>", unsafe_allow_html=True)
+
+        # initialize metrics_df 
+        if 'transpose_df' not in st.session_state:
+                st.session_state.transpose_df = pd.DataFrame()
+
+        if 'metrics_df' not in st.session_state:
+                st.session_state.metrics_df = pd.DataFrame()
+
+        # Add a button to calculate monthly contract values
+        if st.button("Generate ARR Metrics", type="primary"):       
+            try:
+                with st.spinner("Calculating ARR Metrics"):
+                    
+                    # Call the method to create the metrics df
+                    arr_df = st.session_state.arr_df
+                    transpose_df, metrics_df = create_arr_metrics(arr_df)
+
+                    # Initialize or update st.session_state.arr_df
+                    if 'transpose_df' not in st.session_state:
+                        st.session_state.transpose_df = transpose_df
+                    else:
+                        st.session_state.transpose_df = transpose_df
+                    
+                    # Initialize or update st.session_state.arr_df
+                    if 'metrics_df' not in st.session_state:
+                        st.session_state.metrics_df = metrics_df
+                    else:
+                        st.session_state.metrics_df = metrics_df
+
+            except ValueError as e:
+                st.error(f"Error: {str(e)}")
+
+        if st.session_state.metrics_df is not None:
+            # Display monthly arr df
+            st.subheader('Customer Level ARR Metrics :', divider='green') 
+            st.dataframe(st.session_state.transpose_df.round(0), use_container_width=True)
+
+            st.subheader('Aggregated ARR Metrics :', divider='green') 
+            st.dataframe(st.session_state.metrics_df.round(0), use_container_width=True)
 
 
 if __name__ == "__main__":

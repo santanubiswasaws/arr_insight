@@ -1,5 +1,8 @@
 import pandas as pd
 
+
+PREDEFINED_COLUMN_HEADERS = ['customerId', 'contractId', 'contractStartDate', 'contractEndDate', 'totalContractValue']
+
 def map_columns(df, column_mapping):
     """
     Map columns in the DataFrame according to the provided mapping.
