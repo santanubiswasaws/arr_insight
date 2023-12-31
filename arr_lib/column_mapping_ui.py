@@ -5,7 +5,6 @@ def perform_column_mapping(predefined_values, column_names):
 
     # Create a form for user interaction
     with st.form("column_mapping_form"):
-        #st.markdown("<style>label, .multiselect-container .dropdown-item {font-size: 5px;}</style>", unsafe_allow_html=True)
 
         # Initialize the mapping dictionary in session state
         if 'column_mapping' not in st.session_state:
@@ -19,7 +18,7 @@ def perform_column_mapping(predefined_values, column_names):
 
             # Dropdown for selecting actual column name
             with col1:
-                st.markdown(f"<div style='font-size: 10px; vertical-align:top;'>", unsafe_allow_html=True)
+                st.markdown(f"<div style='vertical-align:top; padding:20px;'>", unsafe_allow_html=True)
                 st.markdown(f"<span style='font-size: 18px; font-weight: bold; vertical-align:bottom;'>{value} :</span>", unsafe_allow_html=True)
 
             with col2:
