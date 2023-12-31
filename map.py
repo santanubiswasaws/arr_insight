@@ -116,7 +116,7 @@ def main():
 
         if st.session_state.metrics_df is not None:
             # Display monthly arr df
-            st.subheader('Customer Level ARR Metrics : ', divider='green') 
+            st.subheader('Customer Level ARR Metrics :', divider='green') 
             st.dataframe(st.session_state.transpose_df.round(0), use_container_width=True)
 
             st.subheader('Aggregated ARR Metrics :', divider='green') 
