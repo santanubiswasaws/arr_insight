@@ -3,11 +3,15 @@ import pandas as pd
 from arr_lib.column_mapping import map_columns
 from arr_lib.arr_analysis import create_monthly_rr_analysis
 from arr_lib.column_mapping_ui import perform_column_mapping
+from arr_lib.styling import BUTTON_STYLE
 
 def main():
 
     st.set_page_config(page_title="ARR Analysis", layout='wide')
     st.header("Analyse Annual Recurring Revnue (ARR)")
+
+
+    st.markdown(BUTTON_STYLE, unsafe_allow_html=True)
 
     # Upload CSV file
     uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
@@ -17,7 +21,7 @@ def main():
         df = pd.read_csv(uploaded_file)
 
         # Display the uploaded DataFrame
-        st.subheader('Uploaded Data :')
+        st.subheader('Uploaded Data :', divider='green') 
         st.write(df)
 
 
@@ -43,7 +47,7 @@ def main():
             st.session_state.mapped_df = mapped_df
 
         if st.session_state.mapped_df is not None:
-            st.subheader("Mapped Data :")
+            st.subheader("Mapped Data :", divider='green') 
             st.dataframe(st.session_state.mapped_df, use_container_width=True)
 
 
@@ -55,7 +59,7 @@ def main():
                 st.session_state.arr_df = pd.DataFrame()
 
         # Add a button to calculate monthly contract values
-        if st.button("Calculate Monthly RR Analysis"):
+        if st.button("Calculate Monthly RR Analysis", type="primary"):
             try:
                 # Call the method to create df2
                 with st.spinner("Calculating Monthly RR Analysis..."):
