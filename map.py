@@ -7,8 +7,8 @@ from arr_lib.styling import BUTTON_STYLE
 
 def main():
 
-    st.set_page_config(page_title="ARR Analysis")
-    # st.set_page_config(page_title="ARR Analysis", layout='wide')
+    #st.set_page_config(page_title="ARR Analysis")
+    st.set_page_config(page_title="ARR Analysis", layout='wide')
     st.header("Analyse Annual Recurring Revnue (ARR)")
 
 
