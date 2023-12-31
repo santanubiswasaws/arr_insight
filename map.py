@@ -9,7 +9,7 @@ def main():
 
     #st.set_page_config(page_title="ARR Analysis")
     st.set_page_config(page_title="ARR Analysis", layout='wide')
-    st.header("Analyse Annual Recurring Revnue (ARR)")
+    st.header("Analyze Annual Recurring Revnue (ARR)")
 
 
     st.markdown(BUTTON_STYLE, unsafe_allow_html=True)
