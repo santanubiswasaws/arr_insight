@@ -58,10 +58,10 @@ def main():
                 st.session_state.arr_df = pd.DataFrame()
 
         # Add a button to calculate monthly contract values
-        if st.button("Calculate Monthly RR Analysis", type="primary"):
+        if st.button("Generate monthly numbers : ", type="primary"):
             try:
                 # Call the method to create df2
-                with st.spinner("Calculating Monthly RR Analysis..."):
+                with st.spinner("Calculating Monthly Numbers ..."):
                     # Call the method to create df2
                     mapped_df = st.session_state.mapped_df
                     arr_df = create_monthly_rr_analysis(mapped_df)
@@ -77,7 +77,7 @@ def main():
     
         if st.session_state.arr_df is not None:
             # Display monthly arr df
-            st.subheader('Monthly bucket :', divider='green') 
+            st.subheader('Monthly buckets :', divider='green') 
             st.dataframe(st.session_state.arr_df.round(0), use_container_width=True)
 
         
