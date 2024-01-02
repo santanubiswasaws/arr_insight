@@ -3,6 +3,7 @@ import pandas as pd
 from arr_lib.column_mapping import map_columns
 from arr_lib.column_mapping import PREDEFINED_COLUMN_HEADERS
 from arr_lib.arr_analysis import create_monthly_rr_analysis
+from arr_lib.arr_analysis import create_monthly_rr_analysis_2
 from arr_lib.arr_analysis import create_arr_metrics
 from arr_lib.column_mapping_ui import perform_column_mapping
 from arr_lib.styling import BUTTON_STYLE

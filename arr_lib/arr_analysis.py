@@ -1,7 +1,7 @@
 import pandas as pd
 from datetime import datetime
 
-def create_monthly_rr_analysis(df):
+def create_monthly_rr_analysis_2(df):
     """
     Process contract data and return a new DataFrame with aggregated values.
 
@@ -30,9 +30,17 @@ def create_monthly_rr_analysis(df):
         except ValueError:
             raise ValueError("Invalid date format in 'contractStartDate' or 'contractEndDate'. Use 'mm/dd/yy' format.")
 
+        
         # Validate contract value
-        if not pd.notna(row['totalContractValue']) or row['totalContractValue'] <= 0:
+        if pd.notna(row['totalContractValue']):
+            # Check if the value is a positive numeric value
+            if isinstance(row['totalContractValue'], (int, float)) and row['totalContractValue'] > 0:
+                pass  # Valid value, do nothing
+            else:
+                raise ValueError("Invalid 'totalContractValue'. It must be a positive numeric value.")
+        else:
             raise ValueError("Invalid 'totalContractValue'. It must be a positive numeric value.")
+
         
         # Calculate the contract duration in months
         contract_duration = ((row['contractEndDate'] - row['contractStartDate']).days // 30) + 1
@@ -106,6 +114,112 @@ def create_monthly_rr_analysis(df):
     df2.loc[condition7 & condition8, 'churn'] = df2['monthlyRevenue']  
 
     return df2
+
+
+def create_monthly_rr_analysis(df):
+    """
+    Process contract data and return a new DataFrame with aggregated values.
+
+    Parameters:
+    - df (pd.DataFrame): Original contract data DataFrame.
+
+    Returns:
+    - pd.DataFrame: Processed DataFrame with aggregated values.
+    """
+    # Check if the required columns are present
+    required_columns = ['customerId', 'contractId', 'contractStartDate', 'contractEndDate', 'totalContractValue']
+    if not all(col in df.columns for col in required_columns):
+        raise ValueError("Columns 'customerId', 'contractId', 'contractStartDate', 'contractEndDate', and 'totalContractValue' are required in the DataFrame.")
+
+    # Validate date formats in 'contractStartDate' and 'contractEndDate'
+    try:
+        df['contractStartDate'] = pd.to_datetime(df['contractStartDate'], format='%m/%d/%y')
+        df['contractEndDate'] = pd.to_datetime(df['contractEndDate'], format='%m/%d/%y')
+    except ValueError:
+        raise ValueError("Invalid date format in 'contractStartDate' or 'contractEndDate'. Use 'mm/dd/yy' format.")
+
+    # Calculate the contract duration in months
+    df['contractDuration'] = (df['contractEndDate'] - df['contractStartDate']).dt.days 
+
+    # Validate contract duration
+    valid_contract_duration = df['contractDuration'] > 0
+    if not valid_contract_duration.all():
+        raise ValueError("Invalid contract duration. 'contractEndDate' should be later than 'contractStartDate'.")
+    
+    # Validate contract value column
+    if not pd.to_numeric(df['totalContractValue'], errors='coerce').notna().all():
+        raise ValueError("Invalid 'totalContractValue'. It must contain numeric values.")
+    
+    # Drop a specific column contractDuration - it will be recalculated
+    df = df.drop('contractDuration', axis=1)
+
+    # Function to calculate total months and monthly contract value
+    def calculate_months_and_value(row):
+        months_range = pd.date_range(start=row['contractStartDate'], end=row['contractEndDate'], freq='M')
+        total_months = len(months_range)
+        monthly_contract_value = row['totalContractValue'] / total_months
+        
+        # Create a DataFrame for each contract
+        df_temp = pd.DataFrame({
+            'customerId': [row['customerId']] * total_months,
+            'contractId': [row['contractId']] * total_months,
+            'month': months_range,
+            'monthlyRevenue': [monthly_contract_value] * total_months
+        })
+
+        # Apply the function to each row of the original DataFrame and concatenate the results
+        return df_temp
+    
+    df_temp = pd.concat(df.apply(calculate_months_and_value, axis=1).tolist(), ignore_index=True)
+    df2 = df_temp.groupby(['customerId', 'month']).agg({'monthlyRevenue': 'sum'}).reset_index()
+
+    # Format 'month' column to YYYY-MM
+    df2['month'] = df2['month'].dt.strftime('%Y-%m')  
+
+
+    # Fill NaN values with 0 for 'monthlyRevenue'
+    df2['monthlyRevenue'] = df2['monthlyRevenue'].fillna(0)
+
+    # Update the 'previousMonthAmount' and 'nextMonthAmount' columns
+    df2['previousMonthAmount'] = df2.groupby('customerId')['monthlyRevenue'].shift(fill_value=0)
+    df2['nextMonthAmount'] = df2.groupby('customerId')['monthlyRevenue'].shift(-1, fill_value=0)
+
+
+
+    # metrics calculation 
+
+    # Define boolean conditions for calculations of metrics 
+    condition1 = df2['monthlyRevenue'] == df2['previousMonthAmount']
+    condition2 = df2['previousMonthAmount'] == 0
+    condition3 = df2['monthlyRevenue'] > df2['previousMonthAmount']
+    condition4 = df2['previousMonthAmount'] != 0
+    condition5 = df2['monthlyRevenue'] < df2['previousMonthAmount']
+    condition6 = df2['nextMonthAmount'] != 0
+    condition7 = df2['nextMonthAmount'] == 0
+    condition8 = df2['monthlyRevenue'] > 0
+   
+    # Apply the conditions to calculate the 'newBusiness' column
+    df2['newBusiness'] = 0
+    df2.loc[condition2, 'newBusiness'] = df2.loc[condition2, 'monthlyRevenue']
+
+    # Apply the conditions to calculate the 'upSell' column
+    df2['upSell'] = 0
+    df2.loc[condition3 & condition4, 'upSell'] = df2['monthlyRevenue'] - df2['previousMonthAmount']
+
+    # Apply the conditions to calculate the 'downSell' column
+    df2['downSell'] = 0
+    df2.loc[condition5 & condition6, 'downSell'] = df2['previousMonthAmount'] - df2['monthlyRevenue']
+
+    # Apply the conditions to calculate the 'downSell' column
+    df2['churn'] = 0
+    df2.loc[condition7 & condition8, 'churn'] = df2['monthlyRevenue']
+
+    return df2
+
+
+
+
+
 
 def create_arr_metrics(df):
     """
@@ -223,5 +337,5 @@ def create_aggregated_arr_metrics(df):
     # Display the aggregated DataFrame
     print("\nAggregated DataFrame:")
     print(aggregated_df)
-    
+
     return aggregated_df
