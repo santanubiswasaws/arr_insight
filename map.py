@@ -58,7 +58,7 @@ def main():
                 st.session_state.arr_df = pd.DataFrame()
 
         # Add a button to calculate monthly contract values
-        if st.button("Generate monthly numbers : ", type="primary"):
+        if st.button("Generate Monthly Numbers", type="primary"):
             try:
                 # Call the method to create df2
                 with st.spinner("Calculating Monthly Numbers ..."):
