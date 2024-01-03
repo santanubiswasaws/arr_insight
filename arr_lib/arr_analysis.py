@@ -339,3 +339,81 @@ def create_aggregated_arr_metrics(df):
     print(aggregated_df)
 
     return aggregated_df
+
+
+def create_customer_metrics_for_replan(df):
+    """
+    Process df containing transposed monthly metrics for each customer with aggregated monthly revenue, and calculates the following metrics
+        newBusiness 
+        upSell
+        downSell
+        churn 
+
+    Parameters:
+    - df (pd.DataFrame): transposed monthly metrics for each customer with aggregated monthly revenue
+
+    Returns:
+    - pd.DataFrame: Gives the over all metrics for each month for each customer - MRR, ARR, newBusiness, upSell, downSell, churn 
+    """
+
+
+    # Identify 'newBusiness' rows based on the condition
+    mask = (df.shift(axis=1, fill_value=0) == 0) & (df != 0)
+
+    # Create a new DataFrame with 'newBusiness' rows
+    new_business_df = df[mask].copy()
+    new_business_df['measureType'] = 'newBusiness'
+
+    # Fill NaN values with 0
+    new_business_df = new_business_df.fillna(0)
+
+    # Identify 'upSell' rows based on the condition for all month columns
+    df_numeric = df.iloc[:, 2:].apply(pd.to_numeric, errors='coerce')  # Convert columns to numeric
+    up_sell_mask = (df_numeric.diff(axis=1) > 0) & (df_numeric.shift(axis=1) != 0)
+    up_sell_df = (df_numeric[up_sell_mask] - df_numeric.shift(axis=1))[up_sell_mask].copy()
+    up_sell_df['measureType'] = 'upSell'
+
+    # Mask to make 'upSell' rows zero when the previous month's 'monthlyRevenue' is 0 for all month columns
+    zero_month_mask = (df_numeric.iloc[:, :-1] == 0)
+    up_sell_df[zero_month_mask] = 0
+
+    # Retrieve the 'customerId' values for 'upSell' rows
+    up_sell_df['customerId'] = df.loc[up_sell_mask.index, 'customerId'].values
+
+    # Identify 'downSell' rows based on the condition for all month columns
+    down_sell_mask = (df_numeric.diff(axis=1) < 0) & (df_numeric.shift(axis=1) != 0) & (df_numeric !=0 )
+    down_sell_df = (df_numeric[down_sell_mask] - df_numeric.shift(axis=1))[down_sell_mask].copy()
+    down_sell_df['measureType'] = 'downSell'
+
+    # Retrieve the 'customerId' values for 'downSell' rows
+    down_sell_df['customerId'] = df.loc[down_sell_mask.index, 'customerId'].values
+
+    # Calculate 'churn' rows based on the specified condition
+    churn_mask = (df_numeric.diff(axis=1) < 0) & (df_numeric == 0)
+    churn_df = (df_numeric[churn_mask] - df_numeric.shift(axis=1))[churn_mask].copy()
+    churn_df['measureType'] = 'churn'
+
+
+    # Retrieve the 'customerId' values for 'churn' rows
+    churn_df['customerId'] = df.loc[churn_mask.index, 'customerId'].values
+
+    # Append 'upSell', 'downSell', and 'churn' rows to the original DataFrame
+    df = pd.concat([df, up_sell_df, down_sell_df, churn_df], ignore_index=True)
+
+    # Append 'newBusiness' rows to the original DataFrame
+    df = pd.concat([df, new_business_df], ignore_index=True)
+
+    # Fill NaN values with 0
+    df = df.fillna(0)
+
+    # Define the sorting order for 'measureType'
+    sorting_order = ['monthlyRevenue', 'newBusiness', 'upSell', 'downSell', 'churn']
+
+    # Sort the DataFrame based on 'measureType' using the defined order and 'customerId'
+    df['measureType'] = pd.Categorical(df['measureType'], categories=sorting_order, ordered=True)
+    df = df.sort_values(['customerId', 'measureType'])
+
+
+    df_agg = create_aggregated_arr_metrics(df)
+    print(df)
+    return df, df_agg

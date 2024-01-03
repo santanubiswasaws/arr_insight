@@ -1,6 +1,42 @@
 import streamlit as st
+import pandas as pd
 
-def perform_column_mapping(predefined_values, column_names):
+def perform_column_mapping(predefined_columns, column_names):
+
+    # Create a DataFrame
+    df = pd.DataFrame({'columnHeaders': predefined_columns, 'columnNames': 'double click to select .. '})
+
+    # Initialize the mapping dictionary in session state
+    if 'column_mapping' not in st.session_state:
+        st.session_state.column_mapping = {}
+
+    st.subheader("Map columns", divider='green')    
+
+    col11, col2, col3 = st.columns(3)
+    with col2: 
+        st.markdown(f"Map columns")
+        result_df= st.data_editor(
+            df, 
+            column_config={
+                "columnNames": st.column_config.SelectboxColumn(
+                    "File Columns",
+                    help="The category of the app",
+                    width="medium",
+                    options=column_names,
+                    required=True,
+                ), 
+                "columnHeaders": st.column_config.TextColumn(
+                    disabled=True
+                )      
+            }, 
+            hide_index=True,
+            )
+
+        if st.button('Process mapping'):
+            # Return a message to signal that the mapping is complete
+            return result_df.set_index('columnHeaders')['columnNames'].to_dict()
+        
+def perform_column_mapping_2(predefined_values, column_names):
     st.subheader("Map columns", divider='green') 
 
     # Create a form for user interaction

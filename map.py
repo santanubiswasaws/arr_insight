@@ -5,13 +5,16 @@ from arr_lib.column_mapping import PREDEFINED_COLUMN_HEADERS
 from arr_lib.arr_analysis import create_monthly_rr_analysis
 from arr_lib.arr_analysis import create_monthly_rr_analysis_2
 from arr_lib.arr_analysis import create_arr_metrics
+from arr_lib.arr_analysis import create_customer_metrics_for_replan
 from arr_lib.column_mapping_ui import perform_column_mapping
+from arr_lib.column_mapping_ui import perform_column_mapping_2
+
 from arr_lib.styling import BUTTON_STYLE
 
 def main():
 
     #st.set_page_config(page_title="ARR Analysis")
-    st.set_page_config(page_title="ARR Analysis", layout='wide')
+    st.set_page_config(page_title="ARR Analysis" , layout='wide')
     st.header("Analyze Annual Recurring Revnue (ARR)")
 
 
@@ -24,12 +27,18 @@ def main():
         # Read the CSV file into a DataFrame
         df = pd.read_csv(uploaded_file)
 
-        # Display the uploaded DataFrame
-        st.subheader('Uploaded Data :', divider='green') 
-        st.write(df)
+
+            # Display mapped data 
+        if not st.checkbox('Hide uploaded data'):
+            # Display the uploaded DataFrame
+            st.subheader('Uploaded Data :', divider='green') 
+            st.write(df)
 
 
         st.markdown("<br>", unsafe_allow_html=True)
+
+
+        # Column Mapping Section 
 
         # Column names from the DataFrame
         column_names = list(df.columns)
@@ -47,18 +56,24 @@ def main():
             st.session_state.mapped_df = mapped_df
 
         if st.session_state.mapped_df is not None:
-            st.subheader("Mapped Data :", divider='green') 
-            st.dataframe(st.session_state.mapped_df, use_container_width=True)
+            # Display mapped data 
+            if not st.checkbox('Hide mapped data'):
+                st.subheader("Mapped Data :", divider='green') 
+                st.dataframe(st.session_state.mapped_df, use_container_width=True)
 
 
         st.markdown("<br><br>", unsafe_allow_html=True)
 
 
+        # Monthly bucket
+
         # initialize arr_df 
         if 'arr_df' not in st.session_state:
                 st.session_state.arr_df = pd.DataFrame()
 
-        # Add a button to calculate monthly contract values
+
+    # Add a button to calculate monthly contract values
+
         if st.button("Generate Monthly Numbers", type="primary"):
             try:
                 # Call the method to create df2
@@ -76,15 +91,17 @@ def main():
             except ValueError as e:
                 st.error(f"Error: {str(e)}")
     
+
         if st.session_state.arr_df is not None:
+            if not st.checkbox('Hide monthly buckets'):
             # Display monthly arr df
-            st.subheader('Monthly buckets :', divider='green') 
-            st.dataframe(st.session_state.arr_df.round(0), use_container_width=True)
+                st.subheader('Monthly buckets :', divider='green') 
+                st.dataframe(st.session_state.arr_df.round(0), use_container_width=True)
 
         
         st.markdown("<br><br>", unsafe_allow_html=True)
 
-        # initialize metrics_df 
+        # Metrics Calculation section
         if 'transpose_df' not in st.session_state:
                 st.session_state.transpose_df = pd.DataFrame()
 
@@ -116,13 +133,99 @@ def main():
                 st.error(f"Error: {str(e)}")
 
         if st.session_state.metrics_df is not None:
-            # Display monthly arr df
-            st.subheader('Customer Level ARR Metrics :', divider='green') 
-            st.dataframe(st.session_state.transpose_df.round(0), use_container_width=True)
+            # Display customer level detailes 
+            if st.checkbox('Show Customer level ARR details'):
+                # Display customer level ARR metrics
+                st.subheader('Customer Level ARR Metrics :', divider='green') 
+                st.dataframe(st.session_state.transpose_df.round(0), use_container_width=True)
 
             st.subheader('Aggregated ARR Metrics :', divider='green') 
             st.dataframe(st.session_state.metrics_df.round(0), use_container_width=True)
+        
 
+        # Replanning section 
+        if 'planning_df' not in st.session_state:
+                st.session_state.planning_df = pd.DataFrame()
+
+        if "random_key" not in st.session_state:
+            st.session_state["random_key"] = 0
+
+        # Add a button to calculate monthly contract values
+        if st.button("Create or Reset Planing Sheet", type="primary"):    
+            st.session_state["random_key"] += 1   
+            try:
+                with st.spinner("Creating planning sheet"):
+                    
+                    #reset panning_df 
+                    if 'planning_df' in st.session_state:
+                        st.session_state.planning_df = pd.DataFrame()
+
+                    # Call the method to create the metrics df
+                    planning_df = st.session_state.transpose_df
+                    planning_df = planning_df[planning_df['measureType'] == 'monthlyRevenue']      
+                    st.session_state.planning_df = planning_df
+
+            except ValueError as e:
+                st.error(f"Error: {str(e)}")
+
+
+        if st.session_state.planning_df is not None:
+            if not st.checkbox('Hide replan scratchpad'):
+            # Display monthly arr df           
+                st.subheader('Planning scratchpad - you can edit :', divider='green') 
+                try:
+                    edited_df = st.data_editor(st.session_state.planning_df.round(2), key=st.session_state["random_key"], disabled=('customerId', 'measureType'), num_rows='dynamic', hide_index=True, use_container_width=True)
+                    st.session_state.edited_df = edited_df
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
+
+
+        # Replanning section 
+
+        if 'replan_transpose_df' not in st.session_state:
+                st.session_state.replan_transpose_df= pd.DataFrame()
+
+        if 'replan_metrics_df' not in st.session_state:
+                st.session_state.replan_metrics_df = pd.DataFrame()
+
+        # Add a button to calculate monthly contract values
+        if st.button("Replan ARR Metrics", type="primary"):       
+            try:
+                with st.spinner("Replanning ARR Metrics"):
+                    
+                    # Call the method to create the metrics df
+                    edited_df = st.session_state.edited_df
+                    replan_transpose_df, replan_metrics_df = create_customer_metrics_for_replan(edited_df)
+
+                    # Initialize or update st.session_state.arr_df
+                    if 'replan_transpose_df' not in st.session_state:
+                        st.session_state.replan_transpose_df = replan_transpose_df
+                    else:
+                        st.session_state.replan_transpose_df = replan_transpose_df
+
+                    # Initialize or update st.session_state.arr_df
+                    if 'replan_metrics_df' not in st.session_state:
+                        st.session_state.replan_metrics_df = replan_metrics_df
+                    else:
+                        st.session_state.replan_metrics_df = replan_metrics_df
+                    
+            except ValueError as e:
+                st.error(f"Error: {str(e)}")
+
+        if st.session_state.replan_metrics_df is not None:
+            # Display customer level detailes 
+            if st.checkbox('Show customer level replan details'):
+                st.subheader('Replanned Customer Level ARR Metrics :', divider='green') 
+                st.dataframe(st.session_state.replan_transpose_df.round(0), use_container_width=True)
+
+            st.subheader('Replanned Aggregated ARR Metrics :', divider='green') 
+            st.dataframe(st.session_state.replan_metrics_df.round(0), use_container_width=True)
+
+
+    # -- Create sidebar for plot controls
+    st.sidebar.title('AI helper')
+    query= st.sidebar.text_area('Ask your question - not implemented yet')
+    st.sidebar.button(label="Ask - not functional yet - @todo")
 
 if __name__ == "__main__":
     main()
