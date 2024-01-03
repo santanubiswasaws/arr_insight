@@ -3,6 +3,7 @@
 .env 
 virenv/
 scratch*
+main.py
 
 __pycache__/
 *.py[cod]
