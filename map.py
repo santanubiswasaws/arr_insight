@@ -2,12 +2,11 @@ import streamlit as st
 import pandas as pd
 from arr_lib.column_mapping import map_columns
 from arr_lib.column_mapping import PREDEFINED_COLUMN_HEADERS
-from arr_lib.arr_analysis import create_monthly_rr_analysis
-from arr_lib.arr_analysis import create_monthly_rr_analysis_2
+from arr_lib.arr_analysis import create_monthly_buckets
 from arr_lib.arr_analysis import create_arr_metrics
-from arr_lib.arr_analysis import create_customer_metrics_for_replan
+from arr_lib.arr_analysis import create_customer_and_aggregated_metrics
 from arr_lib.column_mapping_ui import perform_column_mapping
-from arr_lib.column_mapping_ui import perform_column_mapping_2
+
 
 from arr_lib.styling import BUTTON_STYLE
 
@@ -59,7 +58,7 @@ def main():
             # Display mapped data 
             if not st.checkbox('Hide mapped data'):
                 st.subheader("Mapped Data :", divider='green') 
-                st.dataframe(st.session_state.mapped_df, use_container_width=True)
+                st.dataframe(st.session_state.mapped_df, use_container_width=False)
 
 
         st.markdown("<br><br>", unsafe_allow_html=True)
@@ -72,7 +71,7 @@ def main():
                 st.session_state.arr_df = pd.DataFrame()
 
 
-    # Add a button to calculate monthly contract values
+        # Add a button to calculate monthly contract values
 
         if st.button("Generate Monthly Numbers", type="primary"):
             try:
@@ -80,7 +79,8 @@ def main():
                 with st.spinner("Calculating Monthly Numbers ..."):
                     # Call the method to create df2
                     mapped_df = st.session_state.mapped_df
-                    arr_df = create_monthly_rr_analysis(mapped_df)
+                    # arr_df = create_monthly_rr_analysis(mapped_df)
+                    arr_df = create_monthly_buckets(mapped_df)                    
 
                     # Initialize or update st.session_state.arr_df
                     if 'arr_df' not in st.session_state:
@@ -96,7 +96,7 @@ def main():
             if not st.checkbox('Hide monthly buckets'):
             # Display monthly arr df
                 st.subheader('Monthly buckets :', divider='green') 
-                st.dataframe(st.session_state.arr_df.round(0), use_container_width=True)
+                st.dataframe(st.session_state.arr_df.round(2), use_container_width=False)
 
         
         st.markdown("<br><br>", unsafe_allow_html=True)
@@ -115,6 +115,7 @@ def main():
                     
                     # Call the method to create the metrics df
                     arr_df = st.session_state.arr_df
+                    # transpose_df, metrics_df = create_arr_metrics(arr_df)
                     transpose_df, metrics_df = create_arr_metrics(arr_df)
 
                     # Initialize or update st.session_state.arr_df
@@ -137,7 +138,7 @@ def main():
             if st.checkbox('Show Customer level ARR details'):
                 # Display customer level ARR metrics
                 st.subheader('Customer Level ARR Metrics :', divider='green') 
-                st.dataframe(st.session_state.transpose_df.round(0), use_container_width=True)
+                st.dataframe(st.session_state.transpose_df.round(2), use_container_width=True)
 
             st.subheader('Aggregated ARR Metrics :', divider='green') 
             st.dataframe(st.session_state.metrics_df.round(0), use_container_width=True)
@@ -195,7 +196,7 @@ def main():
                     
                     # Call the method to create the metrics df
                     edited_df = st.session_state.edited_df
-                    replan_transpose_df, replan_metrics_df = create_customer_metrics_for_replan(edited_df)
+                    replan_transpose_df, replan_metrics_df = create_customer_and_aggregated_metrics(edited_df)
 
                     # Initialize or update st.session_state.arr_df
                     if 'replan_transpose_df' not in st.session_state:
@@ -216,7 +217,7 @@ def main():
             # Display customer level detailes 
             if st.checkbox('Show customer level replan details'):
                 st.subheader('Replanned Customer Level ARR Metrics :', divider='green') 
-                st.dataframe(st.session_state.replan_transpose_df.round(0), use_container_width=True)
+                st.dataframe(st.session_state.replan_transpose_df.round(2), use_container_width=True)
 
             st.subheader('Replanned Aggregated ARR Metrics :', divider='green') 
             st.dataframe(st.session_state.replan_metrics_df.round(0), use_container_width=True)

@@ -1,130 +1,18 @@
 import pandas as pd
 from datetime import datetime
 
-def create_monthly_rr_analysis_2(df):
+def create_monthly_buckets(df):
     """
-    Process contract data and return a new DataFrame with aggregated values.
+    Process uploaded contract data 
+        1. Validates all the columns 
+        2. Breaks the uploaded records into monthly value - based on the contract lenght - create one row per month 
+        3. Assigns the monthly monthlyRevenue amount for each month 
 
     Parameters:
     - df (pd.DataFrame): Original contract data DataFrame.
 
     Returns:
-    - pd.DataFrame: Processed DataFrame with aggregated values.
-    """
-    # Check if the required columns are present
-    required_columns = ['customerId', 'contractStartDate', 'contractEndDate', 'totalContractValue']
-    if not all(col in df.columns for col in required_columns):
-        raise ValueError("Columns 'customerId', 'contractStartDate', 'contractEndDate', and 'totalContractValue' are required in the DataFrame.")
-
-    df2_rows = []
-
-    # Create an empty DataFrame to store results
-    df2 = pd.DataFrame(columns=['customerId', 'month', 'currentMonthContractValue', 'previousMonthAmount', 'nextMonthAmount', 'newBusiness'])
-
-    # Iterate over each row in the original dataframe
-    for _, row in df.iterrows():
-        # Use pd.to_datetime to convert 'contractStartDate' and 'contractEndDate' to datetime format
-        try:
-            row['contractStartDate'] = pd.to_datetime(row['contractStartDate'], format='%m/%d/%y')
-            row['contractEndDate'] = pd.to_datetime(row['contractEndDate'], format='%m/%d/%y')
-        except ValueError:
-            raise ValueError("Invalid date format in 'contractStartDate' or 'contractEndDate'. Use 'mm/dd/yy' format.")
-
-        
-        # Validate contract value
-        if pd.notna(row['totalContractValue']):
-            # Check if the value is a positive numeric value
-            if isinstance(row['totalContractValue'], (int, float)) and row['totalContractValue'] > 0:
-                pass  # Valid value, do nothing
-            else:
-                raise ValueError("Invalid 'totalContractValue'. It must be a positive numeric value.")
-        else:
-            raise ValueError("Invalid 'totalContractValue'. It must be a positive numeric value.")
-
-        
-        # Calculate the contract duration in months
-        contract_duration = ((row['contractEndDate'] - row['contractStartDate']).days // 30) + 1
-
-        # Validate contract duration
-        if contract_duration <= 0:
-            raise ValueError("Invalid contract duration. 'contractEndDate' should be later than 'contractStartDate'.")
-
-        # Calculate the monthly contract value
-        monthly_contract_value = row['totalContractValue'] / contract_duration
-
-        # Generate monthly records for the new dataframe
-        for i in range(contract_duration):
-            current_month = row['contractStartDate'] + pd.DateOffset(months=i)
-
-            # Check if a record already exists for the customer and month
-            existing_record = df2[(df2['customerId'] == row['customerId']) & (df2['month'] == current_month.strftime('%Y-%m'))]
-
-            # Skip creating a new row if currentMonthContractValue is already present for the customer and month
-            if existing_record.empty or existing_record['monthlyRevenue'].sum() == 0:
-                df2_rows.append({
-                    'customerId': row['customerId'],
-                    'month': current_month.strftime('%Y-%m'),
-                    'monthlyRevenue': monthly_contract_value,
-                    'previousMonthAmount': 0,  # Placeholder for now
-                    'nextMonthAmount': 0,  # Placeholder for now
-                    'newBusiness': 0  # Placeholder for now
-                })
-
-    # Create the DataFrame after the loop
-    df2 = pd.DataFrame(df2_rows)
-
-    # Group by customerId and month, sum the currentMonthContractValue
-    df2 = df2.groupby(['customerId', 'month'], as_index=False).agg({'monthlyRevenue': 'sum'})
-
-    # Update the 'previousMonthAmount' and 'nextMonthAmount' columns
-    for idx, row in df2.iterrows():
-        previous_month_row = df2[(df2['customerId'] == row['customerId']) & (df2['month'] == (datetime.strptime(row['month'], '%Y-%m') - pd.DateOffset(months=1)).strftime('%Y-%m'))]
-        next_month_row = df2[(df2['customerId'] == row['customerId']) & (df2['month'] == (datetime.strptime(row['month'], '%Y-%m') + pd.DateOffset(months=1)).strftime('%Y-%m'))]
-
-        df2.at[idx, 'previousMonthAmount'] = previous_month_row['monthlyRevenue'].sum() if not previous_month_row.empty else 0
-        df2.at[idx, 'nextMonthAmount'] = next_month_row['monthlyRevenue'].sum() if not next_month_row.empty else 0
-
-
-    # metrics calculation 
-
-    # Define boolean conditions for calculations of metrics 
-    condition1 = df2['monthlyRevenue'] == df2['previousMonthAmount']
-    condition2 = df2['previousMonthAmount'] == 0
-    condition3 = df2['monthlyRevenue'] > df2['previousMonthAmount']
-    condition4 = df2['previousMonthAmount'] != 0
-    condition5 = df2['monthlyRevenue'] < df2['previousMonthAmount']
-    condition6 = df2['nextMonthAmount'] != 0
-    condition7 = df2['nextMonthAmount'] == 0
-    condition8 = df2['monthlyRevenue'] > 0
-   
-    # Apply the conditions to calculate the 'newBusiness' column
-    df2['newBusiness'] = 0
-    df2.loc[condition2, 'newBusiness'] = df2.loc[condition2, 'monthlyRevenue']
-
-    # Apply the conditions to calculate the 'upSell' column
-    df2['upSell'] = 0
-    df2.loc[condition3 & condition4, 'upSell'] = df2['monthlyRevenue'] - df2['previousMonthAmount']
-
-    # Apply the conditions to calculate the 'downSell' column
-    df2['downSell'] = 0
-    df2.loc[condition5 & condition6, 'downSell'] = df2['previousMonthAmount'] - df2['monthlyRevenue']
-
-    # Apply the conditions to calculate the 'downSell' column
-    df2['churn'] = 0
-    df2.loc[condition7 & condition8, 'churn'] = df2['monthlyRevenue']  
-
-    return df2
-
-
-def create_monthly_rr_analysis(df):
-    """
-    Process contract data and return a new DataFrame with aggregated values.
-
-    Parameters:
-    - df (pd.DataFrame): Original contract data DataFrame.
-
-    Returns:
-    - pd.DataFrame: Processed DataFrame with aggregated values.
+    - pd.DataFrame: Processed DataFrame one row for each month - for the customer and contract 
     """
     # Check if the required columns are present
     required_columns = ['customerId', 'contractId', 'contractStartDate', 'contractEndDate', 'totalContractValue']
@@ -153,7 +41,7 @@ def create_monthly_rr_analysis(df):
     # Drop a specific column contractDuration - it will be recalculated
     df = df.drop('contractDuration', axis=1)
 
-    # Function to calculate total months and monthly contract value
+    # In line function - Function to calculate total months and monthly contract value
     def calculate_months_and_value(row):
         months_range = pd.date_range(start=row['contractStartDate'], end=row['contractEndDate'], freq='M')
         total_months = len(months_range)
@@ -166,7 +54,6 @@ def create_monthly_rr_analysis(df):
             'month': months_range,
             'monthlyRevenue': [monthly_contract_value] * total_months
         })
-
         # Apply the function to each row of the original DataFrame and concatenate the results
         return df_temp
     
@@ -180,45 +67,8 @@ def create_monthly_rr_analysis(df):
     # Fill NaN values with 0 for 'monthlyRevenue'
     df2['monthlyRevenue'] = df2['monthlyRevenue'].fillna(0)
 
-    # Update the 'previousMonthAmount' and 'nextMonthAmount' columns
-    df2['previousMonthAmount'] = df2.groupby('customerId')['monthlyRevenue'].shift(fill_value=0)
-    df2['nextMonthAmount'] = df2.groupby('customerId')['monthlyRevenue'].shift(-1, fill_value=0)
-
-
-
-    # metrics calculation 
-
-    # Define boolean conditions for calculations of metrics 
-    condition1 = df2['monthlyRevenue'] == df2['previousMonthAmount']
-    condition2 = df2['previousMonthAmount'] == 0
-    condition3 = df2['monthlyRevenue'] > df2['previousMonthAmount']
-    condition4 = df2['previousMonthAmount'] != 0
-    condition5 = df2['monthlyRevenue'] < df2['previousMonthAmount']
-    condition6 = df2['nextMonthAmount'] != 0
-    condition7 = df2['nextMonthAmount'] == 0
-    condition8 = df2['monthlyRevenue'] > 0
-   
-    # Apply the conditions to calculate the 'newBusiness' column
-    df2['newBusiness'] = 0
-    df2.loc[condition2, 'newBusiness'] = df2.loc[condition2, 'monthlyRevenue']
-
-    # Apply the conditions to calculate the 'upSell' column
-    df2['upSell'] = 0
-    df2.loc[condition3 & condition4, 'upSell'] = df2['monthlyRevenue'] - df2['previousMonthAmount']
-
-    # Apply the conditions to calculate the 'downSell' column
-    df2['downSell'] = 0
-    df2.loc[condition5 & condition6, 'downSell'] = df2['previousMonthAmount'] - df2['monthlyRevenue']
-
-    # Apply the conditions to calculate the 'downSell' column
-    df2['churn'] = 0
-    df2.loc[condition7 & condition8, 'churn'] = df2['monthlyRevenue']
 
     return df2
-
-
-
-
 
 
 def create_arr_metrics(df):
@@ -227,12 +77,27 @@ def create_arr_metrics(df):
     Also create the wwaterfall or flow of ARR 
 
     Parameters:
-    - df (pd.DataFrame): Dataframe with each row containing customer and month level contract value, 
-    new buessiness, upsell, downsell and churn
+    - df (pd.DataFrame): Dataframe with each row containing customer and month level contract value - monthlyRevenue
+
+    Returns: 2 data frames
+    - pd.DataFrame: Dataframe with transposed data for each customer - for each month becoming a column, also gives customer level aggregated revenue
+    - pd.DataFrame: Gives the over all metrics for each month, agrregatd for all customers - MRR, ARR, newBusiness, upSell, downSell, churn 
+    """
+
+    transposed_df = create_transposed_monthly_revenue_matrix(df)
+    customer_arr_df, metrics_df = create_customer_and_aggregated_metrics(transposed_df)
+    return customer_arr_df, metrics_df
+
+
+def create_transposed_monthly_revenue_matrix (df): 
+    """
+    Process df containing monthly rr values for each customer and creates a transposed dataframe
+
+    Parameters:
+    - df (pd.DataFrame): Dataframe with each row containing customer and month level contract value
 
     Returns:
     - pd.DataFrame: Dataframe with transposed data - for each month becoming a column, also gives customer level aggregated revenue
-    - pd.DataFrame: Gives the over all metrics for each month - MRR, ARR, newBusiness, upSell, downSell, churn 
     """
 
 
@@ -240,7 +105,7 @@ def create_arr_metrics(df):
     print("Original DataFrame:")
 
     # select only the required columns 
-    df = df.loc[:, ['customerId', 'month','monthlyRevenue','newBusiness', 'upSell', 'downSell','churn']]
+    df = df.loc[:, ['customerId', 'month','monthlyRevenue']]
 
     # Melt the original dataframe
     melted_df = pd.melt(df, id_vars=['customerId', 'month'],
@@ -257,37 +122,11 @@ def create_arr_metrics(df):
     # Rename the columns for better clarity
     transposed_df.columns.name = None  # Remove the 'month' label
 
-    print(transposed_df)
-    #transposed_df = transposed_df.reindex(columns=['customerId', 'measureType'] + list(months))
-
-
     # Display the transposed dataframe
     print("\nTransposed DataFrame:")
-    #print(transposed_df)
+    print(transposed_df)
 
-
-
-    # Define a custom order for the 'Category' column
-    custom_sort_order = ['monthlyRevenue','newBusiness', 'upSell', 'downSell','churn']
-
-    # Convert 'Category' to a categorical column with the custom order
-    transposed_df['measureType'] = pd.Categorical(transposed_df['measureType'], categories=custom_sort_order, ordered=True)
-    print('cat')
-    #print(transposed_df)
-
-    # Sort the DataFrame by a combination of columns (e.g., 'Category' and 'Salary')
-    transposed_df_sorted = transposed_df.sort_values(by=['customerId', 'measureType'], ascending=[True, True])
-
-    # Display the sorted DataFrame
-    print("\nSorted DataFrame by Combination of Columns with Custom Sort Order:")
-    #print(transposed_df_sorted)
-
-
-
-    transpose_df = transposed_df_sorted
-    metrics_df = create_aggregated_arr_metrics(transpose_df)
-    return transpose_df, metrics_df
-
+    return transposed_df
 
 def create_aggregated_arr_metrics(df):
     """
@@ -302,7 +141,8 @@ def create_aggregated_arr_metrics(df):
 
 
     # Group by 'customerId' and aggregate the sum across all measureTypes for each month
-    aggregated_df = df.groupby(['measureType']).agg({col: 'sum' for col in df.columns[2:]}).reset_index()
+
+    aggregated_df = df.groupby(['measureType'], observed=True).agg({col: 'sum' for col in df.columns[2:]}).reset_index()
 
     aggregated_df.insert(0, 'customerId', 'Aggregated')
 
@@ -341,7 +181,7 @@ def create_aggregated_arr_metrics(df):
     return aggregated_df
 
 
-def create_customer_metrics_for_replan(df):
+def create_customer_and_aggregated_metrics(df):
     """
     Process df containing transposed monthly metrics for each customer with aggregated monthly revenue, and calculates the following metrics
         newBusiness 
@@ -354,6 +194,7 @@ def create_customer_metrics_for_replan(df):
 
     Returns:
     - pd.DataFrame: Gives the over all metrics for each month for each customer - MRR, ARR, newBusiness, upSell, downSell, churn 
+    - pd.DataFrame: Gives aggregated metrics  - MRR, ARR, newBusiness, upSell, downSell, churn 
     """
 
 

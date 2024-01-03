@@ -1,9 +1,12 @@
 # Byte-compiled / optimized / DLL files
 
 .env 
-virenv/
+virenv/*
 scratch*
 main.py
+*.bkp
+/arr_lib/*.bkp 
+
 
 __pycache__/
 *.py[cod]
