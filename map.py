@@ -73,7 +73,7 @@ def main():
 
         # Add a button to calculate monthly contract values
 
-        if st.button("Generate Monthly Numbers", type="primary"):
+        if st.button("Generate Monthly Buckets", type="primary"):
             try:
                 # Call the method to create df2
                 with st.spinner("Calculating Monthly Numbers ..."):
@@ -139,11 +139,14 @@ def main():
                 # Display customer level ARR metrics
                 st.subheader('Customer Level ARR Metrics :', divider='green') 
 
+                # set inde to customerId, measureType - for freeze pane functionality
                 display_transposed_df = st.session_state.transpose_df.round(2)
                 display_transposed_df.set_index(['customerId', 'measureType'], inplace=True)
                 st.dataframe(display_transposed_df, use_container_width=True)
 
             st.subheader('Aggregated ARR Metrics :', divider='green') 
+
+            # set inde to customerId, measureType - for freeze pane functionality
             display_metrics_df= st.session_state.metrics_df.round(0)
             display_metrics_df.set_index(['customerId', 'measureType'], inplace=True)
             st.dataframe(display_metrics_df, use_container_width=True)
@@ -180,12 +183,14 @@ def main():
             # Display monthly arr df           
                 st.subheader('Planning scratchpad - you can edit :', divider='green') 
                 try:
+
+                    # set inde to customerId - for freeze pane functionality
                     display_planning_df = st.session_state.planning_df.round(2)
                     display_planning_df.set_index(['customerId'], inplace=True)
                     edited_df = st.data_editor(display_planning_df, key=st.session_state["random_key"], disabled=('customerId', 'measureType'), num_rows='dynamic', hide_index=False, use_container_width=True)
+                    
+                    # reset index to numeric value 
                     edited_df.reset_index(inplace=True)
-                    print("++++++++++++++++++++")
-                    print(edited_df)
                     st.session_state.edited_df = edited_df
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
@@ -228,12 +233,14 @@ def main():
             if st.checkbox('Show customer level replan details'):
                 st.subheader('Replanned Customer Level ARR Metrics :', divider='green') 
 
+                # set inde to customerId, measureType - for freeze pane functionality
                 display_eplan_transpose_df = st.session_state.replan_transpose_df.round(2)
                 display_eplan_transpose_df.set_index(['customerId', 'measureType'], inplace=True)
                 st.dataframe(display_eplan_transpose_df, use_container_width=True)
 
             st.subheader('Replanned Aggregated ARR Metrics :', divider='green') 
 
+            # set inde to customerId, measureType - for freeze pane functionality
             display_replan_metrics_df = st.session_state.replan_metrics_df.round(0)
             display_replan_metrics_df.set_index(['customerId', 'measureType'], inplace=True)
             st.dataframe(display_replan_metrics_df, use_container_width=True)

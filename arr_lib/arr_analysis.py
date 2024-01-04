@@ -86,7 +86,9 @@ def create_arr_metrics(df):
 
     transposed_df = create_transposed_monthly_revenue_matrix(df)
     customer_arr_df, metrics_df = create_customer_and_aggregated_metrics(transposed_df)
+
     return customer_arr_df, metrics_df
+
 
 
 def create_transposed_monthly_revenue_matrix (df): 
@@ -256,5 +258,53 @@ def create_customer_and_aggregated_metrics(df):
 
 
     df_agg = create_aggregated_arr_metrics(df)
+
+    # convert the aggregated df to a waterfall structure
+    df_agg = create_waterfall(df_agg)
+
+    # select only the monthlyRevenue for csutomer level details 
+    df_rr = df[df['measureType'] == 'monthlyRevenue']
+
     print(df)
-    return df, df_agg
+
+    return df_rr, df_agg
+
+
+def create_waterfall(df): 
+    """
+    Process df containing monthly rr metrics, and add the previous months revenue as the opening balance and then reorders the rows as
+        lastMonthRevenue 
+        newBusiness
+        upSell 
+        downSell
+        churn 
+        currentMonthRevenue 
+
+    Parameters:
+    - df (pd.DataFrame): Dataframe with aggreagated month rr metrics 
+
+    Returns:
+    - pd.DataFrame: Dataframe with waterfall details 
+    """
+
+    # Create a copy of the DataFrame for the waterfall version
+    waterfall_df = df[df['measureType']=='monthlyRevenue'].copy()
+
+    # Shift the columns to calculate 'lastMonthRevenue'
+    waterfall_df.iloc[0, 3:] = df.iloc[0, 2:-1].values
+
+    # rename the row measureType 
+    waterfall_df.iloc[0, 1] = "lastMonthRevenue"
+
+    # concat the lastMonthrevenue to to the df
+    waterfall_df = pd.concat([waterfall_df, df], ignore_index=True)
+
+    # Define the sorting order for 'measureType'
+    sorting_order = ['lastMonthRevenue', 'newBusiness', 'upSell', 'downSell', 'churn', 'monthlyRevenue', 'ARR']
+
+    # Sort the DataFrame based on 'measureType' using the defined order and 'customerId'
+    waterfall_df['measureType'] = pd.Categorical(waterfall_df['measureType'], categories=sorting_order, ordered=True)
+    waterfall_df = waterfall_df.sort_values(['customerId', 'measureType'])
+
+
+    return waterfall_df
