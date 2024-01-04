@@ -2,7 +2,6 @@
 
 .env 
 scratch*
-main.py
 *.bkp
 /arr_lib/*.bkp 
 
