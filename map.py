@@ -96,17 +96,17 @@ def main():
             if not st.checkbox('Hide monthly buckets'):
             # Display monthly arr df
                 st.subheader('Monthly buckets :', divider='green') 
-                st.dataframe(st.session_state.arr_df.round(2), use_container_width=False)
+                st.dataframe(st.session_state.arr_df.round(2), use_container_width=False, hide_index=True)
 
         
         st.markdown("<br><br>", unsafe_allow_html=True)
 
         # Metrics Calculation section
         if 'transpose_df' not in st.session_state:
-                st.session_state.transpose_df = pd.DataFrame()
+                st.session_state.transpose_df = pd.DataFrame(columns=['customerId', 'measureType'])
 
         if 'metrics_df' not in st.session_state:
-                st.session_state.metrics_df = pd.DataFrame()
+                st.session_state.metrics_df = pd.DataFrame(columns=['customerId', 'measureType'])
 
         # Add a button to calculate monthly contract values
         if st.button("Generate ARR Metrics", type="primary"):       
@@ -138,15 +138,20 @@ def main():
             if st.checkbox('Show Customer level ARR details'):
                 # Display customer level ARR metrics
                 st.subheader('Customer Level ARR Metrics :', divider='green') 
-                st.dataframe(st.session_state.transpose_df.round(2), use_container_width=True)
+
+                display_transposed_df = st.session_state.transpose_df.round(2)
+                display_transposed_df.set_index(['customerId', 'measureType'], inplace=True)
+                st.dataframe(display_transposed_df, use_container_width=True)
 
             st.subheader('Aggregated ARR Metrics :', divider='green') 
-            st.dataframe(st.session_state.metrics_df.round(0), use_container_width=True)
+            display_metrics_df= st.session_state.metrics_df.round(0)
+            display_metrics_df.set_index(['customerId', 'measureType'], inplace=True)
+            st.dataframe(display_metrics_df, use_container_width=True)
         
 
         # Replanning section 
         if 'planning_df' not in st.session_state:
-                st.session_state.planning_df = pd.DataFrame()
+                st.session_state.planning_df = pd.DataFrame(columns=['customerId', 'measureType'])
 
         if "random_key" not in st.session_state:
             st.session_state["random_key"] = 0
@@ -159,7 +164,7 @@ def main():
                     
                     #reset panning_df 
                     if 'planning_df' in st.session_state:
-                        st.session_state.planning_df = pd.DataFrame()
+                        st.session_state.planning_df = pd.DataFrame(columns=['customerId', 'measureType'])
 
                     # Call the method to create the metrics df
                     planning_df = st.session_state.transpose_df
@@ -175,7 +180,12 @@ def main():
             # Display monthly arr df           
                 st.subheader('Planning scratchpad - you can edit :', divider='green') 
                 try:
-                    edited_df = st.data_editor(st.session_state.planning_df.round(2), key=st.session_state["random_key"], disabled=('customerId', 'measureType'), num_rows='dynamic', hide_index=True, use_container_width=True)
+                    display_planning_df = st.session_state.planning_df.round(2)
+                    display_planning_df.set_index(['customerId'], inplace=True)
+                    edited_df = st.data_editor(display_planning_df, key=st.session_state["random_key"], disabled=('customerId', 'measureType'), num_rows='dynamic', hide_index=False, use_container_width=True)
+                    edited_df.reset_index(inplace=True)
+                    print("++++++++++++++++++++")
+                    print(edited_df)
                     st.session_state.edited_df = edited_df
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
@@ -184,10 +194,10 @@ def main():
         # Replanning section 
 
         if 'replan_transpose_df' not in st.session_state:
-                st.session_state.replan_transpose_df= pd.DataFrame()
+                st.session_state.replan_transpose_df= pd.DataFrame(columns=['customerId', 'measureType'])
 
         if 'replan_metrics_df' not in st.session_state:
-                st.session_state.replan_metrics_df = pd.DataFrame()
+                st.session_state.replan_metrics_df = pd.DataFrame(columns=['customerId', 'measureType'])
 
         # Add a button to calculate monthly contract values
         if st.button("Replan ARR Metrics", type="primary"):       
@@ -217,10 +227,16 @@ def main():
             # Display customer level detailes 
             if st.checkbox('Show customer level replan details'):
                 st.subheader('Replanned Customer Level ARR Metrics :', divider='green') 
-                st.dataframe(st.session_state.replan_transpose_df.round(2), use_container_width=True)
+
+                display_eplan_transpose_df = st.session_state.replan_transpose_df.round(2)
+                display_eplan_transpose_df.set_index(['customerId', 'measureType'], inplace=True)
+                st.dataframe(display_eplan_transpose_df, use_container_width=True)
 
             st.subheader('Replanned Aggregated ARR Metrics :', divider='green') 
-            st.dataframe(st.session_state.replan_metrics_df.round(0), use_container_width=True)
+
+            display_replan_metrics_df = st.session_state.replan_metrics_df.round(0)
+            display_replan_metrics_df.set_index(['customerId', 'measureType'], inplace=True)
+            st.dataframe(display_replan_metrics_df, use_container_width=True)
 
 
     # -- Create sidebar for plot controls
