@@ -13,4 +13,4 @@ __pycache__/
 # C extensions
 *.so
 *.old
-virenv 
+virenv/ 
