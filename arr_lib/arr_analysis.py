@@ -74,7 +74,7 @@ def create_monthly_buckets_2(df):
 # implemented with presetting the number of months
 def create_monthly_buckets(df):
     """
-    Process uploaded contract data 
+        Process uploaded contract data 
         1. Validates all the columns 
         2. Breaks the uploaded records into monthly value - based on the contract lenght - create one row per month 
         3. Assigns the monthly monthlyRevenue amount for each month 
