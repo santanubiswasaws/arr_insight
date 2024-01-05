@@ -1,5 +1,6 @@
 import pandas as pd
 from datetime import datetime
+import streamlit as st
 
 def create_monthly_buckets(df):
     """
@@ -69,6 +70,87 @@ def create_monthly_buckets(df):
 
 
     return df2
+
+# implemented with presetting the number of months
+def create_monthly_buckets_2(df):
+    """
+    Process uploaded contract data 
+        1. Validates all the columns 
+        2. Breaks the uploaded records into monthly value - based on the contract lenght - create one row per month 
+        3. Assigns the monthly monthlyRevenue amount for each month 
+
+    Parameters:
+    - df (pd.DataFrame): Original contract data DataFrame.
+
+    Returns:
+    - pd.DataFrame: Processed DataFrame one row for each month - for the customer and contract 
+    """
+    # Check if the required columns are present
+    required_columns = ['customerId', 'contractId', 'contractStartDate', 'contractEndDate', 'totalContractValue']
+    if not all(col in df.columns for col in required_columns):
+        raise ValueError("Columns 'customerId', 'contractId', 'contractStartDate', 'contractEndDate', and 'totalContractValue' are required in the DataFrame.")
+
+    # Validate date formats in 'contractStartDate' and 'contractEndDate'
+    try:
+        df['contractStartDate'] = pd.to_datetime(df['contractStartDate'], format='%m/%d/%y')
+        df['contractEndDate'] = pd.to_datetime(df['contractEndDate'], format='%m/%d/%y')
+    except ValueError:
+        raise ValueError("Invalid date format in 'contractStartDate' or 'contractEndDate'. Use 'mm/dd/yy' format.")
+
+    # Calculate the contract duration in months
+    df['contractDuration'] = (df['contractEndDate'] - df['contractStartDate']).dt.days 
+
+    # Validate contract duration
+    valid_contract_duration = df['contractDuration'] > 0
+    if not valid_contract_duration.all():
+        raise ValueError("Invalid contract duration. 'contractEndDate' should be later than 'contractStartDate'.")
+    
+    # Validate contract value column
+    if not pd.to_numeric(df['totalContractValue'], errors='coerce').notna().all():
+        raise ValueError("Invalid 'totalContractValue'. It must contain numeric values.")
+    
+    # Convert contractStartDate and contractEndDate to datetime objects
+    try:
+        df['contractStartDate'] = pd.to_datetime(df['contractStartDate'], format='%m/%d/%y')
+        df['contractEndDate'] = pd.to_datetime(df['contractEndDate'], format='%m/%d/%y')
+    except ValueError:
+        raise ValueError("Invalid date format in 'contractStartDate' or 'contractEndDate'. Use 'mm/dd/yy' format.")
+
+    # Calculate contractLength in terms of days
+    df['contractLength'] = (df['contractEndDate'] - df['contractStartDate']).dt.days
+
+    # Calculate contractMonths by rounding contractLength/30 - added 0.01 for boundary conditions
+    df['contractMonths'] = ((df['contractLength'] / 30) + 0.01).round()
+
+    # Repeat rows based on contractMonths
+    second_df = df.loc[df.index.repeat(df['contractMonths'].astype(int))].reset_index(drop=True)
+
+    # handle missing contactId situations - defaults it to customerId + index of the row (unique)
+    second_df['contractId'].fillna(second_df['customerId'].astype(str) + second_df.index.astype(str), inplace=True)
+
+    # Add a column called monthIndex and increment it by 1 for each customerId and contractId
+    second_df['monthIndex'] = second_df.groupby(['customerId', 'contractId']).cumcount() + 1
+
+    # Convert monthIndex to integers and calculate the 'month' column
+    second_df['monthIndex'] = second_df['monthIndex'].astype(int)
+
+    # increments the month fields based on monthIndex
+    second_df['month'] = second_df.apply(lambda row: row['contractStartDate'] + pd.DateOffset(months=row['monthIndex'] - 1), axis=1)
+
+    # Reformat 'month' to YYYY-MM format (drop the day portion)
+    second_df['month'] = second_df['month'].dt.strftime('%Y-%m')
+
+    # Add a column called monthlyRevenue
+    second_df['monthlyRevenue'] = second_df['totalContractValue'] / second_df['contractMonths']
+
+    # Fill NaN values with 0 for 'monthlyRevenue'
+    second_df['monthlyRevenue'] = second_df['monthlyRevenue'].round(2).fillna(0)
+
+
+    # filter only the following columns - customerId, contractId, month, monthlyRevenue 
+    second_df = second_df[['customerId', 'contractId', 'month', 'monthlyRevenue']]
+
+    return second_df
 
 
 def create_arr_metrics(df):

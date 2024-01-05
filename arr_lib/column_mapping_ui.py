@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 
+
+# this version used streamlit data_editor 
 def perform_column_mapping(predefined_columns, column_names):
 
     # Create a DataFrame
@@ -36,6 +38,9 @@ def perform_column_mapping(predefined_columns, column_names):
             # Return a message to signal that the mapping is complete
             return result_df.set_index('columnHeaders')['columnNames'].to_dict()
         
+
+
+# another implementation using tables and dropdown lists 
 def perform_column_mapping_2(predefined_values, column_names):
     st.subheader("Map columns", divider='green') 
 

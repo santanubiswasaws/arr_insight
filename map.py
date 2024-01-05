@@ -3,6 +3,7 @@ import pandas as pd
 from arr_lib.column_mapping import map_columns
 from arr_lib.column_mapping import PREDEFINED_COLUMN_HEADERS
 from arr_lib.arr_analysis import create_monthly_buckets
+from arr_lib.arr_analysis import create_monthly_buckets_2
 from arr_lib.arr_analysis import create_arr_metrics
 from arr_lib.arr_analysis import create_customer_and_aggregated_metrics
 from arr_lib.column_mapping_ui import perform_column_mapping
@@ -80,7 +81,7 @@ def main():
                     # Call the method to create df2
                     mapped_df = st.session_state.mapped_df
                     # arr_df = create_monthly_rr_analysis(mapped_df)
-                    arr_df = create_monthly_buckets(mapped_df)                    
+                    arr_df = create_monthly_buckets_2(mapped_df)                    
 
                     # Initialize or update st.session_state.arr_df
                     if 'arr_df' not in st.session_state:
