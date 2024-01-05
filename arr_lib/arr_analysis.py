@@ -2,7 +2,7 @@ import pandas as pd
 from datetime import datetime
 import streamlit as st
 
-def create_monthly_buckets(df):
+def create_monthly_buckets_2(df):
     """
     Process uploaded contract data 
         1. Validates all the columns 
@@ -72,7 +72,7 @@ def create_monthly_buckets(df):
     return df2
 
 # implemented with presetting the number of months
-def create_monthly_buckets_2(df):
+def create_monthly_buckets(df):
     """
     Process uploaded contract data 
         1. Validates all the columns 
