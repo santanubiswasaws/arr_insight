@@ -265,6 +265,11 @@ def create_customer_and_aggregated_metrics(df):
     # select only the monthlyRevenue for csutomer level details 
     df_rr = df[df['measureType'] == 'monthlyRevenue']
 
+
+    # sort mothly_revenue matrix, but first month of sales
+
+    df_rr = sort_by_first_month_of_sales(df_rr)
+
     print(df)
 
     return df_rr, df_agg
@@ -308,3 +313,36 @@ def create_waterfall(df):
 
 
     return waterfall_df
+
+
+def sort_by_first_month_of_sales(df): 
+    """
+    Sort the df containing monthwise customer revenue grid, in the order of first month of sale
+
+    Parameters:
+    - df (pd.DataFrame): Dataframe with monthwise customer revenue grid
+
+    Returns:
+    - pd.DataFrame: Same grid but sorted in first month of sales 
+    """
+
+    # assumes the first two columns are customerId and measureType
+
+    # Create a new column 'first_non_zero_month' to store the name of the first non-zero sales month
+    df['first_non_zero_month'] = (df.iloc[:, 2:] != 0).idxmax(axis=1)
+
+    # Create a new column 'last_non_zero_month' to store the name of the last non-zero sales month
+    df['last_non_zero_month'] = (df.iloc[:, 2:-1].apply(lambda x: x.iloc[::-1].ne(0).idxmax() if x.any() else 'NaN', axis=1))
+
+    # 'first_non_zero_month', 'last_non_zero_month', and finally by 'customerId'
+    sorted_df = df.sort_values(by=[ 'first_non_zero_month', 'last_non_zero_month', 'customerId'])
+
+    # Reset the index if needed
+    sorted_df.reset_index(drop=True, inplace=True)
+
+    # Drop the 'first_non_zero_month' and 'last_non_zero_month' columns
+    sorted_df.drop(columns=['first_non_zero_month', 'last_non_zero_month'], inplace=True)
+
+    return sorted_df
+
+
