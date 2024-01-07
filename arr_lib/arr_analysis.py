@@ -122,11 +122,18 @@ def create_monthly_buckets(df):
     # Calculate contractMonths by rounding contractLength/30 - added 0.01 for boundary conditions
     df['contractMonths'] = ((df['contractLength'] / 30) + 0.01).round()
 
+
+    # handle missing contactId situations - defaults it to customerId + index of the row (unique)
+    df['contractId'].fillna(df['customerId'].astype(str) + df.index.astype(str), inplace=True)
+
+    # handle repeating contractId situation - concatenate contractId with index
+    df['contractId'] = df['contractId'].astype(str) + df.index.astype(str)
+
     # Repeat rows based on contractMonths
     second_df = df.loc[df.index.repeat(df['contractMonths'].astype(int))].reset_index(drop=True)
 
     # handle missing contactId situations - defaults it to customerId + index of the row (unique)
-    second_df['contractId'].fillna(second_df['customerId'].astype(str) + second_df.index.astype(str), inplace=True)
+    # second_df['contractId'].fillna(second_df['customerId'].astype(str) + second_df.index.astype(str), inplace=True)
 
     # Add a column called monthIndex and increment it by 1 for each customerId and contractId
     second_df['monthIndex'] = second_df.groupby(['customerId', 'contractId']).cumcount() + 1
