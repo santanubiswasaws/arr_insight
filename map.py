@@ -17,10 +17,6 @@ def main():
 
     st.markdown(BUTTON_STYLE, unsafe_allow_html=True)
 
-
-    # reset session 
-    st.session_state.clear()
-
     # Upload CSV file
     uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
 
