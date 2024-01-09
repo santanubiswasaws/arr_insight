@@ -23,7 +23,7 @@ def perform_column_mapping(predefined_columns, predefined_date_formats, input_df
 
     st.subheader("Map columns", divider='green')    
 
-    col11, col2, col3 = st.columns(3)
+    col11, col2, col3 = st.columns([1,3,1])
     with col2: 
         st.markdown(f"Map columns")
         result_df= st.data_editor(
