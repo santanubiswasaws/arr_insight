@@ -1,12 +1,21 @@
 import streamlit as st
 import pandas as pd
+from arr_lib.column_mapping import map_columns
+from arr_lib.column_mapping import PREDEFINED_COLUMN_HEADERS
+from arr_lib.column_mapping import PREDEFINED_DATE_FORMATS
+from arr_lib.arr_validations import validate_input_data
+from arr_lib.arr_validations import validate_mapping
+
+# column mapper with dateformat picker
+def perform_column_mapping(predefined_columns, predefined_date_formats, input_df):
 
 
-# this version used streamlit data_editor 
-def perform_column_mapping(predefined_columns, column_names):
+    # Column names from the DataFrame
+    column_names = list(input_df.columns)
 
     # Create a DataFrame
-    df = pd.DataFrame({'columnHeaders': predefined_columns, 'columnNames': 'double click to select .. '})
+    df = pd.DataFrame({'columnHeaders': predefined_columns, 'columnNames': 'double click to select .. ', 'dateFormat': 'pick appropriate date format'})
+    print(df)
 
     # Initialize the mapping dictionary in session state
     if 'column_mapping' not in st.session_state:
@@ -28,16 +37,44 @@ def perform_column_mapping(predefined_columns, column_names):
                     required=True,
                 ), 
                 "columnHeaders": st.column_config.TextColumn(
-                    disabled=True
-                )      
+                    disabled=True,
+                ), 
+                "dateFormat" : st.column_config.SelectboxColumn(
+                    "Date Format",
+                    width="meadium",
+                    options=predefined_date_formats,
+                )
             }, 
             hide_index=True,
             )
-
-        if st.button('Process mapping'):
-            # Return a message to signal that the mapping is complete
-            return result_df.set_index('columnHeaders')['columnNames'].to_dict()
         
+        print(result_df)
+        
+        if st.button('Process mapping'):
+            
+            # Validate that the mapping is complete 
+            valid_map = validate_mapping(column_names, predefined_date_formats, result_df)
+            if not valid_map : 
+                if 'column_mapping_status' not in st.session_state:
+                    st.session_state.column_mapping_status = False
+                return False; 
+        
+            # change the column header of the input_df based on mapped column
+            if result_df is not None:
+                mapped_df = map_columns (input_df, result_df)
+                st.session_state.mapped_df = mapped_df
+
+
+                validation_status = validate_input_data(st.session_state.mapped_df)
+
+                st.session_state.column_mapping_status = validation_status
+
+            return validation_status
+        else: 
+            # # initialize validation status
+            if 'column_mapping_status' not in st.session_state:
+                    st.session_state.column_mapping_status = False
+            return st.session_state.column_mapping_status
 
 
 # another implementation using tables and dropdown lists 
@@ -78,3 +115,5 @@ def perform_column_mapping_2(predefined_values, column_names):
 
     # If no submit button is pressed, return None
     return None
+
+

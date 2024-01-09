@@ -1,14 +1,11 @@
 import streamlit as st
 import pandas as pd
-from arr_lib.column_mapping import map_columns
 from arr_lib.column_mapping import PREDEFINED_COLUMN_HEADERS
+from arr_lib.column_mapping import PREDEFINED_DATE_FORMATS
 from arr_lib.arr_analysis import create_monthly_buckets
-from arr_lib.arr_analysis import create_monthly_buckets_2
 from arr_lib.arr_analysis import create_arr_metrics
 from arr_lib.arr_analysis import create_customer_and_aggregated_metrics
 from arr_lib.column_mapping_ui import perform_column_mapping
-
-
 from arr_lib.styling import BUTTON_STYLE
 
 def main():
@@ -27,8 +24,7 @@ def main():
         # Read the CSV file into a DataFrame
         df = pd.read_csv(uploaded_file)
 
-
-            # Display mapped data 
+        # Display mapped data 
         if not st.checkbox('Hide uploaded data'):
             # Display the uploaded DataFrame
             st.subheader('Uploaded Data :', divider='green') 
@@ -40,27 +36,41 @@ def main():
 
         # Column Mapping Section 
 
-        # Column names from the DataFrame
-        column_names = list(df.columns)
+        # # Column names from the DataFrame
+        # column_names = list(df.columns)
 
         # Call the perform_column_mapping method - to render mapping UI 
-        column_mapping_result = perform_column_mapping(PREDEFINED_COLUMN_HEADERS, column_names)
+        # column_mapping_result = perform_column_mapping(PREDEFINED_COLUMN_HEADERS, column_names)
 
-        # initialize mapped_df
+        # Call the perform_column_mapping method - to render mapping UI - with dateformat
+
+                # # initialize mapped_df
         if 'mapped_df' not in st.session_state:
                 st.session_state.mapped_df = pd.DataFrame()
 
-        # Display the result
-        if column_mapping_result is not None:
-            mapped_df = map_columns (df, column_mapping_result)
-            st.session_state.mapped_df = mapped_df
+        # # initialize validation status
+        if 'column_mapping_status' not in st.session_state:
+                st.session_state.column_mapping_status = False
 
-        if st.session_state.mapped_df is not None:
+        # Map file column names based on mapped columns and validate content        
+        column_mapping_status = perform_column_mapping(PREDEFINED_COLUMN_HEADERS, PREDEFINED_DATE_FORMATS, df)  
+
+        st.session_state.column_mapping_status = column_mapping_status
+
+        # # Display the result
+        # if column_mapping_df is not None:
+        #     mapped_df = map_columns (df, column_mapping_df)
+        #     st.session_state.mapped_df = mapped_df
+
+        print( st.session_state.mapped_df)
+        print(st.session_state.column_mapping_status)
+
+        mapped_df = st.session_state.mapped_df
+        if (not mapped_df.empty) and st.session_state.column_mapping_status:
             # Display mapped data 
             if not st.checkbox('Hide mapped data'):
                 st.subheader("Mapped Data :", divider='green') 
                 st.dataframe(st.session_state.mapped_df, use_container_width=False)
-
 
         st.markdown("<br><br>", unsafe_allow_html=True)
 
@@ -73,8 +83,16 @@ def main():
 
 
         # Add a button to calculate monthly contract values
+                
+        if 'generate_monthly_bucket_button_clicked' not in st.session_state:
+                st.session_state.generate_monthly_bucket_button_clicked = False
 
-        if st.button("Generate Monthly Buckets", type="primary"):
+
+        if (not mapped_df.empty) and st.session_state.column_mapping_status: 
+                st.session_state.generate_monthly_bucket_button_clicked = st.button("Generate Monthly Buckets", type="primary")
+
+        #if st.button("Generate Monthly Buckets", type="primary") and st.session_state.column_mapping_status:
+        if  st.session_state.generate_monthly_bucket_button_clicked and st.session_state.column_mapping_status:
             try:
                 # Call the method to create df2
                 with st.spinner("Calculating Monthly Numbers ..."):
@@ -92,8 +110,9 @@ def main():
             except ValueError as e:
                 st.error(f"Error: {str(e)}")
     
-
-        if st.session_state.arr_df is not None:
+        # .empty does not work on session object - hence need reassignment to pd.dataframe 
+        arr_df = st.session_state.arr_df
+        if  not (arr_df.empty)  and st.session_state.column_mapping_status:
             if not st.checkbox('Hide monthly buckets'):
             # Display monthly arr df
                 st.subheader('Monthly buckets :', divider='green') 
@@ -109,8 +128,15 @@ def main():
         if 'metrics_df' not in st.session_state:
                 st.session_state.metrics_df = pd.DataFrame(columns=['customerId', 'measureType'])
 
+
+        if 'generate_arr_metrics_button_clicked' not in st.session_state:
+                st.session_state.generate_arr_metrics_button_clicked = False
+
+        if st.session_state.column_mapping_status and (not arr_df.empty): 
+             st.session_state.generate_arr_metrics_button_clicked = st.button("Generate ARR Metrics", type="primary")
+
         # Add a button to calculate monthly contract values
-        if st.button("Generate ARR Metrics", type="primary"):       
+        if st.session_state.generate_arr_metrics_button_clicked and st.session_state.column_mapping_status:       
             try:
                 with st.spinner("Calculating ARR Metrics"):
                     
@@ -134,7 +160,8 @@ def main():
             except ValueError as e:
                 st.error(f"Error: {str(e)}")
 
-        if st.session_state.metrics_df is not None:
+        metrics_df = st.session_state.metrics_df
+        if (not metrics_df.empty) and st.session_state.column_mapping_status:
             # Display customer level detailes 
             if st.checkbox('Show Customer level ARR details'):
                 # Display customer level ARR metrics
@@ -152,6 +179,7 @@ def main():
             display_metrics_df.set_index(['customerId', 'measureType'], inplace=True)
             st.dataframe(display_metrics_df, use_container_width=True)
         
+        st.markdown("<br><br>", unsafe_allow_html=True)
 
         # Replanning section 
         if 'planning_df' not in st.session_state:
@@ -161,7 +189,16 @@ def main():
             st.session_state["random_key"] = 0
 
         # Add a button to calculate monthly contract values
-        if st.button("Create or Reset Planing Sheet", type="primary"):    
+        
+
+        if 'create_reset_planning_sheet_button_clicked' not in st.session_state:
+                st.session_state.create_reset_planning_sheet_button_clicked = False
+
+        metrics_df = st.session_state.metrics_df
+        if st.session_state.column_mapping_status and (not metrics_df.empty): 
+             st.session_state.create_reset_planning_sheet_button_clicked = st.button("Create or Reset Planing Sheet", type="primary")
+
+        if st.session_state.create_reset_planning_sheet_button_clicked and st.session_state.column_mapping_status:       
             st.session_state["random_key"] += 1   
             try:
                 with st.spinner("Creating planning sheet"):
@@ -178,10 +215,10 @@ def main():
             except ValueError as e:
                 st.error(f"Error: {str(e)}")
 
-
-        if st.session_state.planning_df is not None:
+        planning_df = st.session_state.planning_df
+        if (not planning_df.empty) and st.session_state.column_mapping_status: 
             if not st.checkbox('Hide replan scratchpad'):
-            # Display monthly arr df           
+            # Display planning scratchpad        
                 st.subheader('Planning scratchpad - you can edit :', divider='green') 
                 try:
 
@@ -196,6 +233,7 @@ def main():
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
 
+        st.markdown("<br>", unsafe_allow_html=True)
 
         # Replanning section 
 
@@ -205,8 +243,19 @@ def main():
         if 'replan_metrics_df' not in st.session_state:
                 st.session_state.replan_metrics_df = pd.DataFrame(columns=['customerId', 'measureType'])
 
+
+        if 'replan_arr_metrics_button_clicked' not in st.session_state:
+                st.session_state.replan_arr_metrics_button_clicked = False
+
+        if 'edited_df' not in st.session_state:
+                st.session_state.edited_df = pd.DataFrame()
+
+        edited_df = st.session_state.edited_df 
+        if (not edited_df.empty) and st.session_state.column_mapping_status: 
+             st.session_state.replan_arr_metrics_button_clicked = st.button("Replan ARR Metrics", type="primary")
+
         # Add a button to calculate monthly contract values
-        if st.button("Replan ARR Metrics", type="primary"):       
+        if st.session_state.replan_arr_metrics_button_clicked and st.session_state.column_mapping_status:        
             try:
                 with st.spinner("Replanning ARR Metrics"):
                     
@@ -229,7 +278,8 @@ def main():
             except ValueError as e:
                 st.error(f"Error: {str(e)}")
 
-        if st.session_state.replan_metrics_df is not None:
+        replan_metrics_df = st.session_state.replan_metrics_df 
+        if (not replan_metrics_df.empty) and st.session_state.column_mapping_status:  
             # Display customer level detailes 
             if st.checkbox('Show customer level replan details'):
                 st.subheader('Replanned Customer Level ARR Metrics :', divider='green') 

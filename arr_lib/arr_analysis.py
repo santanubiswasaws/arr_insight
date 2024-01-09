@@ -109,13 +109,6 @@ def create_monthly_buckets(df):
     if not pd.to_numeric(df['totalContractValue'], errors='coerce').notna().all():
         raise ValueError("Invalid 'totalContractValue'. It must contain numeric values.")
     
-    # Convert contractStartDate and contractEndDate to datetime objects
-    try:
-        df['contractStartDate'] = pd.to_datetime(df['contractStartDate'], format='%m/%d/%y')
-        df['contractEndDate'] = pd.to_datetime(df['contractEndDate'], format='%m/%d/%y')
-    except ValueError:
-        raise ValueError("Invalid date format in 'contractStartDate' or 'contractEndDate'. Use 'mm/dd/yy' format.")
-
     # Calculate contractLength in terms of days
     df['contractLength'] = (df['contractEndDate'] - df['contractStartDate']).dt.days
 
