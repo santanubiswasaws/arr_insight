@@ -212,28 +212,34 @@ def main():
                     planning_df = planning_df[planning_df['measureType'] == 'monthlyRevenue']      
                     st.session_state.planning_df = planning_df
 
+                    # reset replan output dfs 
+                    st.session_state.replan_metrics_df = pd.DataFrame()
+                    st.session_state.replan_transpose_df = pd.DataFrame()
+
             except ValueError as e:
                 st.error(f"Error: {str(e)}")
 
         planning_df = st.session_state.planning_df
         if (not planning_df.empty) and st.session_state.column_mapping_status: 
-            if not st.checkbox('Hide replan scratchpad'):
+            # if not st.checkbox('Hide replan scratchpad'):
             # Display planning scratchpad        
-                st.subheader('Planning scratchpad - you can edit :', divider='green') 
-                try:
+            st.subheader('Planning scratchpad - you can edit :', divider='green') 
+            try:
 
-                    # set inde to customerId - for freeze pane functionality
-                    display_planning_df = st.session_state.planning_df.round(2)
-                    display_planning_df.set_index(['customerId'], inplace=True)
-                    edited_df = st.data_editor(display_planning_df, key=st.session_state["random_key"], disabled=('customerId', 'measureType'), num_rows='dynamic', hide_index=False, use_container_width=True)
-                    
-                    # reset index to numeric value 
-                    edited_df.reset_index(inplace=True)
-                    st.session_state.edited_df = edited_df
-                except Exception as e:
-                    st.error(f"An error occurred: {e}")
+                # set inde to customerId - for freeze pane functionality
+                display_planning_df = st.session_state.planning_df.round(2)
+                display_planning_df.set_index(['customerId'], inplace=True)
+                edited_df = st.data_editor(display_planning_df, key=st.session_state["random_key"], disabled=('customerId', 'measureType'), num_rows='dynamic', hide_index=False, use_container_width=True)
+                
+                # reset index to numeric value 
+                edited_df.reset_index(inplace=True)
+                st.session_state.edited_df = edited_df
+            except Exception as e:
+                    st.error(f"An error occurred: {e}") 
 
         st.markdown("<br>", unsafe_allow_html=True)
+
+
 
         # Replanning section 
 
@@ -285,9 +291,9 @@ def main():
                 st.subheader('Replanned Customer Level ARR Metrics :', divider='green') 
 
                 # set inde to customerId, measureType - for freeze pane functionality
-                display_eplan_transpose_df = st.session_state.replan_transpose_df.round(2)
-                display_eplan_transpose_df.set_index(['customerId', 'measureType'], inplace=True)
-                st.dataframe(display_eplan_transpose_df, use_container_width=True)
+                display_replan_transpose_df = st.session_state.replan_transpose_df.round(2)
+                display_replan_transpose_df.set_index(['customerId', 'measureType'], inplace=True)
+                st.dataframe(display_replan_transpose_df, use_container_width=True)
 
             st.subheader('Replanned Aggregated ARR Metrics :', divider='green') 
 
