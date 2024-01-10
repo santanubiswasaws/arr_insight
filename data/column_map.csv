@@ -1,0 +1,6 @@
+columnHeaders,columnNames,dateFormat
+customerId,Account Name,pick appropriate date format
+contractId,Opportunity ID,pick appropriate date format
+contractStartDate,Contract Term Start,mm/dd/yy
+contractEndDate,Contract Term End,mm/dd/yy
+totalContractValue,Amount,pick appropriate date format

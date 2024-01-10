@@ -5,6 +5,8 @@ from arr_lib.column_mapping import PREDEFINED_COLUMN_HEADERS
 from arr_lib.column_mapping import PREDEFINED_DATE_FORMATS
 from arr_lib.arr_validations import validate_input_data
 from arr_lib.arr_validations import validate_mapping
+import os
+import base64
 
 # column mapper with dateformat picker
 def perform_column_mapping(predefined_columns, predefined_date_formats, input_df):
@@ -17,13 +19,41 @@ def perform_column_mapping(predefined_columns, predefined_date_formats, input_df
     df = pd.DataFrame({'columnHeaders': predefined_columns, 'columnNames': 'double click to select .. ', 'dateFormat': 'pick appropriate date format'})
     print(df)
 
+    # populate the df from session if exists 
+
+    if 'loaded_map_df' not in st.session_state:
+        st.session_state.loaded_map_df = pd.DataFrame()
+    else: 
+        loaded_map_df = st.session_state.loaded_map_df
+        if (not loaded_map_df.empty): 
+                    df = loaded_map_df
+
+
     # Initialize the mapping dictionary in session state
     if 'column_mapping' not in st.session_state:
         st.session_state.column_mapping = {}
 
     st.subheader("Map columns", divider='green')    
 
-    col11, col2, col3 = st.columns([1,3,1])
+    col1a, col2a = st.columns([1,7], gap="small")
+    with col2a: 
+        if st.button("Load Saved Column Map"):
+            try:
+                file_path = os.path.join('data/column_map.csv')
+                loaded_map_df = pd.read_csv(file_path)
+                st.session_state.loaded_map_df = loaded_map_df
+                st.success(f"Saved map loaded")
+
+                loaded_map_df = st.session_state.loaded_map_df
+
+                if (not loaded_map_df.empty): 
+                    df = loaded_map_df
+
+            except FileNotFoundError:
+                st.error(f"File '{file_path}' not found. Please save the DataFrame first.")
+
+
+    col1, col2, col3 = st.columns([1,5,2], gap="small")
     with col2: 
         st.markdown(f"Map columns")
         result_df= st.data_editor(
@@ -47,9 +77,19 @@ def perform_column_mapping(predefined_columns, predefined_date_formats, input_df
             }, 
             hide_index=True,
             )
-        
-        print(result_df)
-        
+        st.session_state.result_df = result_df
+
+    with col3:
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        if st.button('Save/Overwrite Column Map'):
+            file_path = os.path.join('data/column_map.csv')
+            result_df.to_csv('data/column_map.csv', index=False)
+            st.success(f"Column mapped saved")
+
+    with col2:
+
+        result_df = st.session_state.result_df
+       
         if st.button('Process mapping'):
             
             # Validate that the mapping is complete 
@@ -75,6 +115,8 @@ def perform_column_mapping(predefined_columns, predefined_date_formats, input_df
             if 'column_mapping_status' not in st.session_state:
                     st.session_state.column_mapping_status = False
             return st.session_state.column_mapping_status
+
+
 
 
 # another implementation using tables and dropdown lists 
