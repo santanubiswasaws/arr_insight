@@ -25,7 +25,8 @@ def main():
         df = pd.read_csv(uploaded_file)
 
         # Display mapped data 
-        if not st.checkbox('Hide uploaded data'):
+
+        with st.expander('Show/Hide uploaded data', expanded=True):
             # Display the uploaded DataFrame
             st.subheader('Uploaded Data :', divider='green') 
             st.write(df)
@@ -44,7 +45,7 @@ def main():
 
         # Call the perform_column_mapping method - to render mapping UI - with dateformat
 
-                # # initialize mapped_df
+        # # initialize mapped_df
         if 'mapped_df' not in st.session_state:
                 st.session_state.mapped_df = pd.DataFrame()
 
@@ -67,8 +68,9 @@ def main():
 
         mapped_df = st.session_state.mapped_df
         if (not mapped_df.empty) and st.session_state.column_mapping_status:
+
             # Display mapped data 
-            if not st.checkbox('Hide mapped data'):
+            with st.expander('Show/Hide mapped data', expanded=True):
                 st.subheader("Mapped Data :", divider='green') 
                 st.dataframe(st.session_state.mapped_df, use_container_width=False)
 
@@ -113,7 +115,9 @@ def main():
         # .empty does not work on session object - hence need reassignment to pd.dataframe 
         arr_df = st.session_state.arr_df
         if  not (arr_df.empty)  and st.session_state.column_mapping_status:
-            if not st.checkbox('Hide monthly buckets'):
+
+            with st.expander('Show/Hide monthly buckets', expanded=True):
+
             # Display monthly arr df
                 st.subheader('Monthly buckets :', divider='green') 
                 st.dataframe(st.session_state.arr_df.round(2), use_container_width=False, hide_index=True)
@@ -163,13 +167,14 @@ def main():
         metrics_df = st.session_state.metrics_df
         if (not metrics_df.empty) and st.session_state.column_mapping_status:
             # Display customer level detailes 
-            if st.checkbox('Show Customer level ARR details'):
+
+            with st.expander('Show/Hide customer level ARR details', expanded = True):
                 # Display customer level ARR metrics
                 st.subheader('Customer Level ARR Metrics :', divider='green') 
 
                 # set inde to customerId, measureType - for freeze pane functionality
                 display_transposed_df = st.session_state.transpose_df.round(2)
-                display_transposed_df.set_index(['customerId', 'measureType'], inplace=True)
+                display_transposed_df.set_index(['customerId'], inplace=True)
                 st.dataframe(display_transposed_df, use_container_width=True)
 
             st.subheader('Aggregated ARR Metrics :', divider='green') 
@@ -221,7 +226,8 @@ def main():
 
         planning_df = st.session_state.planning_df
         if (not planning_df.empty) and st.session_state.column_mapping_status: 
-            # if not st.checkbox('Hide replan scratchpad'):
+
+            # if not st.checkbox('Hide replan scratchpad'): -- removed to fix data overwrite problem 
             # Display planning scratchpad        
             st.subheader('Planning scratchpad - you can edit :', divider='green') 
             try:
@@ -229,7 +235,8 @@ def main():
                 # set inde to customerId - for freeze pane functionality
                 display_planning_df = st.session_state.planning_df.round(2)
                 display_planning_df.set_index(['customerId'], inplace=True)
-                edited_df = st.data_editor(display_planning_df, key=st.session_state["random_key"], disabled=('customerId', 'measureType'), num_rows='dynamic', hide_index=False, use_container_width=True)
+                # edited_df = st.data_editor(display_planning_df, key=st.session_state["random_key"], disabled=('customerId', 'measureType'), num_rows='dynamic', hide_index=False, use_container_width=True)
+                edited_df = st.data_editor(display_planning_df, key=st.session_state["random_key"], num_rows='dynamic', hide_index=False, use_container_width=True)
                 
                 # reset index to numeric value 
                 edited_df.reset_index(inplace=True)
@@ -287,12 +294,13 @@ def main():
         replan_metrics_df = st.session_state.replan_metrics_df 
         if (not replan_metrics_df.empty) and st.session_state.column_mapping_status:  
             # Display customer level detailes 
-            if st.checkbox('Show customer level replan details'):
+
+            with st.expander('Show/Hide customer level replan details', expanded = True):
                 st.subheader('Replanned Customer Level ARR Metrics :', divider='green') 
 
                 # set inde to customerId, measureType - for freeze pane functionality
                 display_replan_transpose_df = st.session_state.replan_transpose_df.round(2)
-                display_replan_transpose_df.set_index(['customerId', 'measureType'], inplace=True)
+                display_replan_transpose_df.set_index(['customerId'], inplace=True)
                 st.dataframe(display_replan_transpose_df, use_container_width=True)
 
             st.subheader('Replanned Aggregated ARR Metrics :', divider='green') 
