@@ -5,6 +5,7 @@ scratch*
 *.bkp
 /arr_lib/*.bkp 
 
+data/*
 
 __pycache__/
 *.py[cod]

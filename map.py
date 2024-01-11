@@ -8,6 +8,12 @@ from arr_lib.arr_analysis import create_customer_and_aggregated_metrics
 from arr_lib.column_mapping_ui import perform_column_mapping
 from arr_lib.styling import BUTTON_STYLE
 
+
+def clear_session ():
+    for key in st.session_state.keys():
+        # st.session_state[key] = st.session_state.get(key, None)
+        del st.session_state[key]
+
 def main():
 
     #st.set_page_config(page_title="ARR Analysis")
@@ -18,7 +24,7 @@ def main():
     st.markdown(BUTTON_STYLE, unsafe_allow_html=True)
 
     # Upload CSV file
-    uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
+    uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"], on_change = clear_session)
 
     if uploaded_file is not None:
         # Read the CSV file into a DataFrame
