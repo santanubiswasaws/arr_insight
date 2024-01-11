@@ -11,7 +11,6 @@ from arr_lib.styling import BUTTON_STYLE
 
 def clear_session ():
     for key in st.session_state.keys():
-        # st.session_state[key] = st.session_state.get(key, None)
         del st.session_state[key]
 
 def main():
