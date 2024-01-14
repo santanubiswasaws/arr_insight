@@ -31,10 +31,11 @@ body {
   line-height: 1.2rem;
 }
 
-.stToolBar {
+.stActionButton {
     visibility: hidden;
 
 }
+
 .stDeployButton {
     visibility: hidden;
 }
