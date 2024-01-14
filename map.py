@@ -7,6 +7,7 @@ from arr_lib.arr_analysis import create_arr_metrics
 from arr_lib.arr_analysis import create_customer_and_aggregated_metrics
 from arr_lib.column_mapping_ui import perform_column_mapping
 from arr_lib.styling import BUTTON_STYLE
+from arr_lib.styling import GLOBAL_STYLING
 
 
 def clear_session ():
@@ -15,10 +16,13 @@ def clear_session ():
 
 def main():
 
-    #st.set_page_config(page_title="ARR Analysis")
-    st.set_page_config(page_title="ARR Analysis" , layout='wide')
-    st.header("Analyze Annual Recurring Revnue (ARR)")
 
+
+    st.set_page_config(page_title="ARR Analysis")
+    #st.set_page_config(page_title="ARR Analysis" , layout='wide')
+    st.header("Analyze Annual Recurring Revnue (ARR)")
+    
+    st.markdown(GLOBAL_STYLING, unsafe_allow_html=True)
 
     st.markdown(BUTTON_STYLE, unsafe_allow_html=True)
 

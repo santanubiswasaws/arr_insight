@@ -25,6 +25,7 @@ BUTTON_STYLE="""
 
 
 GLOBAL_STYLING = """
+<style>
 .title:after{
     content: 'TEST';
     }
@@ -64,5 +65,5 @@ GLOBAL_STYLING = """
 .stToolbar{
     visibility: None;
 }
-
+</style>
 """
