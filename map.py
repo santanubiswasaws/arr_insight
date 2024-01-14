@@ -20,9 +20,13 @@ def main():
 
     st.set_page_config(page_title="ARR Analysis")
     #st.set_page_config(page_title="ARR Analysis" , layout='wide')
-    st.header("Analyze Annual Recurring Revnue (ARR)")
-    
+
+
     st.markdown(GLOBAL_STYLING, unsafe_allow_html=True)
+    
+    st.header("Analyze Annual Recurring Revnue (ARR)")
+
+
 
     st.markdown(BUTTON_STYLE, unsafe_allow_html=True)
 

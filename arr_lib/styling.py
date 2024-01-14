@@ -26,6 +26,24 @@ BUTTON_STYLE="""
 
 GLOBAL_STYLING = """
 <style>
+
+
+.stActionButton {
+    visibility: hidden;
+
+}
+
+.stDeployButton {
+    visibility: hidden;
+}
+
+
+</style>
+
+"""
+
+GLOBAL_STYLING_2 = """
+<style>
 body {
   /*background: #353535; */
   line-height: 1.2rem;
