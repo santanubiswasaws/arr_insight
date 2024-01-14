@@ -31,8 +31,13 @@ body {
   line-height: 1.2rem;
 }
 
-footer {visibility: hidden;}
+.stToolBar {
+    visibility: hidden;
 
+}
+.stDeployButton {
+    visibility: hidden;
+}
 
 /* Form */
 .css-1h109da{
@@ -97,6 +102,13 @@ content: 'TEST';
 .stToolbar{
     visibility: None;
 }
+
+
+.stActionButton{
+    visibility: None;
+}
+
+
 
 .loader,
 .loader:after {
